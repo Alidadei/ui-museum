@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>给页面施一点小魔法 · 互动魔法习作</title>
+<style>
+  :root {
+    --cream: #FFFDF5;
+    --ink: #22221F;
+    --dim: #6B6A63;
+    --blue: #2F6FEB;
+    --gold: #E8A93C;
+    --pink: #E85D9E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--cream); color: var(--ink);
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    min-height: 100vh; padding: 44px 60px; position: relative; overflow: hidden;
+    transition: background 0.45s ease, color 0.45s ease;
+  }
+  body.night { background: #201D2E; color: #ECEAF6; }
+  body.night .lede { color: #A9A6C0; }
+  body.night footer { color: #8E8BA8; }
+  body.night footer a { color: var(--gold); }
+  body.night .toggle { background: #2E2A44; }
+  .toggle {
+    position: absolute; top: 34px; right: 56px;
+    width: 88px; height: 44px; border-radius: 999px;
+    background: #F1EBD8; border: 2px solid var(--ink);
+    cursor: pointer; transition: background 0.45s ease;
+  }
+  .toggle .knob {
+    position: absolute; top: 2px; left: 3px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--gold); display: grid; place-items: center; font-size: 19px;
+    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  body.night .toggle .knob { transform: translateX(43px); }
+  .kicker { font-size: 12.5px; letter-spacing: 0.28em; color: var(--blue); font-weight: 700; }
+  h1 { font-size: 50px; line-height: 1.4; font-weight: 800; margin-top: 26px; max-width: 14em; letter-spacing: 0.01em; }
+  .grad {
+    background: linear-gradient(92deg, var(--blue), var(--pink) 55%, var(--gold));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .lede { color: var(--dim); font-size: 17px; line-height: 2; margin-top: 18px; max-width: 42em; }
+  .widgets { display: flex; gap: 22px; margin-top: 40px; flex-wrap: wrap; }
+  .card {
+    border: 2px solid var(--ink); border-radius: 16px; background: #fff;
+    padding: 22px 26px; box-shadow: 5px 5px 0 var(--ink);
+    min-width: 230px; transition: background 0.45s ease;
+  }
+  body.night .card { background: #2B2740; box-shadow: 5px 5px 0 #0E0D16; }
+  .card h3 { font-size: 15.5px; letter-spacing: 0.04em; }
+  .card p { font-size: 13px; color: var(--dim); margin-top: 8px; line-height: 1.8; }
+  body.night .card p { color: #A9A6C0; }
+  .sparkle-btn {
+    margin-top: 16px; font: inherit; font-size: 14.5px; font-weight: 700;
+    color: #fff; background: var(--pink); border: 2px solid var(--ink);
+    border-radius: 12px; padding: 10px 20px; cursor: pointer;
+    box-shadow: 3px 3px 0 var(--ink); transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .sparkle-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
+  .sparkle-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .hint { font-size: 12.5px; color: var(--dim); margin-top: 12px; }
+  footer {
+    position: absolute; left: 60px; right: 60px; bottom: 26px;
+    display: flex; justify-content: space-between; font-size: 12.5px; color: var(--dim);
+    border-top: 1.5px solid var(--ink); padding-top: 13px;
+  }
+  footer a { color: var(--blue); text-decoration: none; font-weight: 700; }
+  .spark { position: fixed; pointer-events: none; font-size: 20px; z-index: 9; }
+</style>
+</head>
+<body>
+  <div class="toggle" id="toggle" role="switch" aria-checked="false" tabindex="0" title="昼夜开关">
+    <div class="knob">☀️</div>
+  </div>
+
+  <p class="kicker">INTERACTIVE · 对访客眨眼睛</p>
+  <h1>给页面<span class="grad">施一点</span>小魔法。<br>不用大，要会笑。</h1>
+  <p class="lede">好的开发者网站有一种狡猾的温柔：你只是想读篇文章，它却偷偷准备了十处惊喜——开关会翻跟头，按钮会开花，光标路过的地方都有回响。</p>
+
+  <div class="widgets">
+    <div class="card">
+      <h3>✨ 开花按钮</h3>
+      <p>据说按下去会有好事发生。科学尚未证实，但试过的人都笑了。</p>
+      <button class="sparkle-btn" id="bloom">点我开花</button>
+      <p class="hint" id="hint">已开花 0 次</p>
+    </div>
+    <div class="card">
+      <h3>🌙 昼夜开关</h3>
+      <p>右上角那枚开关，翻过去就是晚上。月亮出来时，整页陪你换睡衣。</p>
+    </div>
+  </div>
+
+  <footer>
+    <span>风格习作 · 学其"处处有回应"的互动心法，彩蛋原创</span>
+    <span>致敬 <a href="https://www.joshwcomeau.com/" target="_blank" rel="noopener">joshwcomeau.com</a> · Josh Comeau</span>
+  </footer>
+
+<script>
+  // 昼夜开关
+  const toggle = document.getElementById("toggle");
+  const knob = toggle.querySelector(".knob");
+  function flip() {
+    const night = document.body.classList.toggle("night");
+    toggle.setAttribute("aria-checked", night);
+    knob.textContent = night ? "🌙" : "☀️";
+  }
+  toggle.addEventListener("click", flip);
+  toggle.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+
+  // 开花按钮：喷一把 ✨
+  let blooms = 0;
+  document.getElementById("bloom").addEventListener("click", (e) => {
+    blooms++;
+    document.getElementById("hint").textContent = "已开花 " + blooms + " 次" + (blooms > 3 ? "——花园已经管不住了" : "");
+    const r = e.target.getBoundingClientRect();
+    const glyphs = ["✨", "🌸", "⭐️", "🌟", "💫"];
+    for (let i = 0; i < 14; i++) {
+      const s = document.createElement("span");
+      s.className = "spark";
+      s.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
+      s.style.left = r.left + Math.random() * r.width + "px";
+      s.style.top = r.top + "px";
+      document.body.appendChild(s);
+      s.animate([
+        { transform: "translate(0,0) scale(0.6)", opacity: 1 },
+        { transform: `translate(${(Math.random() - 0.5) * 220}px, ${-60 - Math.random() * 160}px) scale(${0.9 + Math.random()}) rotate(${(Math.random() - 0.5) * 260}deg)`, opacity: 0 },
+      ], { duration: 900 + Math.random() * 700, easing: "cubic-bezier(0.22,0.9,0.36,1)" }).onfinish = () => s.remove();
+    }
+  });
+</script>
+</body>
+</html>
