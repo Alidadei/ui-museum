@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>界面收藏馆 · Interface Museum</title>
+<meta name="description" content="收录美观的、亲手创造的界面。每一件展品都是一个独立的世界，由总台步入观展。">
+<meta name="theme-color" content="#171310">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='10' fill='%23b5442f'/%3E%3Ctext x='32' y='45' font-size='34' text-anchor='middle' fill='%23f6ecdb' font-family='serif'%3E%E8%97%8F%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/hub.css">
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<header class="hall-head">
+  <div class="brand">
+    <span class="seal" aria-hidden="true">藏</span>
+    <div>
+      <h1 class="title">界面收藏馆</h1>
+      <p class="sub">INTERFACE MUSEUM · 收录美观的、亲手创造的界面</p>
+    </div>
+  </div>
+  <p class="head-note">
+    每一件展品都是一个独立的世界。<br>
+    点击相框或按 <kbd>Enter</kbd> 步入 · <kbd>Esc</kbd> 归馆
+  </p>
+</header>
+
+<div class="mid">
+  <aside class="hall-side">
+    <section class="index">
+      <h2 class="side-title">导览 · INDEX</h2>
+      <ol id="indexList"></ol>
+    </section>
+    <section class="rules">
+      <h2 class="side-title">馆规 · RULES</h2>
+      <ol>
+        <li>每件展品自成世界——各居 <code>uis/</code> 一室，互不惊扰。</li>
+        <li>重叠的原子资源藏入库房——<code>shared/</code> 专柜保管。</li>
+        <li>新藏品先挂号——在 <code>registry.js</code> 登记方可展出。</li>
+      </ol>
+    </section>
+  </aside>
+
+  <main class="hall-main">
+    <div class="hall-center" id="hallCenter">
+      <div class="ghost-no" id="ghostNo" aria-hidden="true">壹</div>
+
+      <div class="frame-wrap">
+        <div class="frame" id="frame" data-loaded="false"></div>
+      </div>
+
+      <div class="placard" id="placard">
+        <p class="placard-no" id="pNo"></p>
+        <h2 class="placard-title" id="pTitle"></h2>
+        <p class="placard-meta" id="pMeta"></p>
+        <p class="placard-note" id="pNote"></p>
+        <div class="placard-actions">
+          <button class="btn-enter" id="btnEnter" type="button">步入展厅 →</button>
+          <span class="placard-links" id="pLinks"></span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="hall-foot">
+  <span class="hint"><kbd>←</kbd> <kbd>→</kbd> 换展 · <kbd>Enter</kbd> 步入 · <kbd>Esc</kbd> 归馆</span>
+  <span class="foot-right">手工搭建 · 零依赖纯静态 ·
+    <a href="https://github.com/Alidadei/ui-museum" target="_blank" rel="noopener">GitHub ↗</a>
+  </span>
+</footer>
+
+<div class="topbar" id="topbar" hidden>
+  <button class="btn-leave" id="btnLeave" type="button">← 返回总台 <kbd>Esc</kbd></button>
+  <span class="topbar-title" id="topbarTitle"></span>
+  <span class="topbar-links" id="topbarLinks"></span>
+</div>
+
+<noscript><p style="padding:2rem;text-align:center">本馆需要启用 JavaScript 才能开展。</p></noscript>
+
+<script src="registry.js"></script>
+<script src="assets/hub.js"></script>
+</body>
+</html>

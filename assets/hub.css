@@ -1,0 +1,247 @@
+/* ============================================================
+   界面收藏馆 · 总台样式
+   零依赖：无外部字体、无框架；暖棕米色 × 馆藏印章红
+   ============================================================ */
+:root {
+  --bg: #171310;
+  --bg-soft: #221b14;
+  --ink: #ece4d4;
+  --ink-dim: #a4977f;
+  --ink-faint: #6f6350;
+  --gold: #c8a96e;
+  --seal: #b5442f;
+  --line: rgba(236, 228, 212, 0.16);
+  --line-soft: rgba(236, 228, 212, 0.08);
+  --serif: "Songti SC", "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+  --sans: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg);
+  background-image: radial-gradient(1100px 640px at 72% -12%, var(--bg-soft) 0%, transparent 62%);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+body.in-stage { overflow: hidden; }
+::selection { background: rgba(200, 169, 110, 0.35); }
+:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
+kbd {
+  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
+  padding: 1px 6px; font: 11px/1.5 var(--sans); color: var(--ink-dim);
+}
+a { color: inherit; }
+
+/* 胶片颗粒：覆盖一切（含展品），玻璃展柜质感 */
+.grain {
+  position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── 顶部馆牌 ─────────────────────────────────────── */
+.hall-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 24px; padding: 26px 40px 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.brand { display: flex; align-items: center; gap: 16px; }
+.seal {
+  flex: none; width: 46px; height: 46px; border-radius: 7px;
+  background: var(--seal); color: #f6ecdb; font-family: var(--serif); font-size: 27px;
+  display: grid; place-items: center;
+  transform: rotate(-4deg);
+  box-shadow: 0 3px 14px rgba(181, 68, 47, 0.35);
+  user-select: none;
+}
+.title { font-family: var(--serif); font-weight: 400; font-size: 30px; letter-spacing: 0.3em; line-height: 1; }
+.sub { margin-top: 8px; color: var(--ink-dim); font-size: 11px; letter-spacing: 0.26em; }
+.head-note { text-align: right; color: var(--ink-dim); font-size: 12px; line-height: 2; }
+
+/* ── 中部：左导览/馆规 + 右展厅 ───────────────────── */
+.mid { flex: 1 0 auto; display: grid; grid-template-columns: 296px 1fr; min-height: 0; }
+
+.hall-side {
+  border-right: 1px solid var(--line-soft);
+  padding: 30px 26px;
+  display: flex; flex-direction: column; gap: 34px;
+}
+.side-title {
+  font-size: 10.5px; font-weight: 400; letter-spacing: 0.34em;
+  color: var(--ink-faint); margin-bottom: 14px;
+}
+.index ol { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.index button {
+  width: 100%; text-align: left; background: none; border: 0;
+  border-left: 2px solid transparent;
+  color: var(--ink-dim); font: inherit; font-size: 13px; letter-spacing: 0.06em;
+  padding: 9px 10px; cursor: pointer;
+  display: flex; gap: 10px; align-items: baseline;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+.index button:hover { color: var(--ink); }
+.index button.active {
+  color: var(--ink); border-left-color: var(--seal);
+  background: rgba(236, 228, 212, 0.04);
+}
+.index .no { flex: none; color: var(--gold); font-size: 11px; letter-spacing: 0.12em; }
+.index .ghost {
+  color: var(--ink-faint); font-size: 11.5px; letter-spacing: 0.22em;
+  padding: 10px 12px; border-top: 1px dashed var(--line-soft); margin-top: 8px;
+}
+.rules ol { list-style: none; display: flex; flex-direction: column; gap: 12px;
+  color: var(--ink-dim); font-size: 12.5px; line-height: 1.9; }
+.rules code {
+  font-family: var(--mono); font-size: 11px; color: var(--gold);
+  background: rgba(236, 228, 212, 0.06); border-radius: 3px; padding: 1px 5px;
+}
+
+/* ── 展厅 ─────────────────────────────────────────── */
+.hall-main { min-width: 0; padding: 30px 40px 34px; display: flex; }
+.hall-center {
+  position: relative; flex: 1; width: 100%;
+  min-height: 480px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 26px;
+}
+.ghost-no {
+  position: absolute; right: 1%; top: 50%; transform: translateY(-54%);
+  z-index: 0; font-family: var(--serif); font-size: min(36vh, 320px); line-height: 1;
+  color: transparent; -webkit-text-stroke: 1px rgba(236, 228, 212, 0.07);
+  user-select: none; pointer-events: none;
+}
+.frame-wrap { position: relative; z-index: 1; max-width: 100%; outline: 1px solid var(--line-soft); outline-offset: 8px; }
+.frame-wrap::before, .frame-wrap::after {
+  content: ""; position: absolute; width: 14px; height: 14px;
+  border: 1px solid var(--gold); opacity: 0.55;
+}
+.frame-wrap::before { top: -8px; left: -8px; border-right: 0; border-bottom: 0; }
+.frame-wrap::after { bottom: -8px; right: -8px; border-left: 0; border-top: 0; }
+.frame {
+  position: relative; overflow: hidden;
+  background: #0d0a08; border: 1px solid var(--line);
+  box-shadow: 0 26px 70px -22px rgba(0, 0, 0, 0.7);
+}
+.frame::before {
+  content: "布 展 中"; position: absolute; inset: 0; z-index: 1;
+  display: grid; place-items: center;
+  color: var(--ink-faint); font-size: 12px; letter-spacing: 0.6em; text-indent: 0.6em;
+}
+.frame[data-loaded="true"]::before { display: none; }
+
+/* 展品 iframe 外壳：始终 position:fixed，用 transform 在「相框 ↔ 全屏」间飞行 */
+.port {
+  position: fixed; z-index: 40;
+  background: #0d0a08;
+  box-shadow: 0 26px 90px -18px rgba(0, 0, 0, 0.75);
+  opacity: 0;
+}
+.port.loaded { opacity: 1; transition: opacity 0.6s ease 0.05s; }
+body:not(.in-stage) .port { cursor: zoom-in; }
+body:not(.in-stage) .port-iframe { pointer-events: none; }
+body.in-stage .port { box-shadow: none; }
+.port-iframe {
+  border: 0; display: block;
+  transform-origin: 0 0;
+  background: #0d0a08;
+}
+
+/* ── 展签 ─────────────────────────────────────────── */
+.placard { width: var(--frame-w, 720px); max-width: 100%; }
+.placard-no { color: var(--gold); font-size: 11px; letter-spacing: 0.34em; }
+.placard-title {
+  font-family: var(--serif); font-weight: 400; font-size: 24px;
+  letter-spacing: 0.12em; margin-top: 10px;
+}
+.placard-meta { color: var(--ink-dim); font-size: 12px; letter-spacing: 0.1em; margin-top: 8px; }
+.placard-note {
+  color: var(--ink-dim); font-size: 13px; line-height: 2;
+  margin-top: 14px; max-width: 66ch;
+}
+.placard-actions { margin-top: 18px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.btn-enter {
+  font-family: var(--sans); font-size: 13px; letter-spacing: 0.28em; text-indent: 0.1em;
+  color: #191411; background: var(--ink);
+  border: 0; border-radius: 2px; padding: 11px 26px; cursor: pointer;
+  transition: background 0.25s;
+}
+.btn-enter:hover { background: var(--gold); }
+.placard-links a, .topbar-links a {
+  color: var(--ink-faint); font-size: 12px; letter-spacing: 0.1em;
+  text-decoration: none; border-bottom: 1px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+.placard-links a:hover, .topbar-links a:hover { color: var(--ink-dim); border-color: var(--line); }
+.placard-links .sep, .topbar-links .sep { color: var(--ink-faint); margin: 0 8px; font-size: 12px; }
+
+/* ── 底部 ─────────────────────────────────────────── */
+.hall-foot {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 15px 40px; border-top: 1px solid var(--line-soft);
+  color: var(--ink-faint); font-size: 11.5px; letter-spacing: 0.12em;
+}
+.hall-foot a { color: var(--ink-dim); text-decoration: none; }
+.hall-foot a:hover { color: var(--ink); }
+
+/* ── 全屏观展顶栏 ─────────────────────────────────── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50; height: 52px;
+  display: flex; align-items: center; gap: 18px; padding: 0 18px;
+  background: rgba(20, 15, 11, 0.82);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line-soft);
+  transform: translateY(-100%); opacity: 0;
+  transition: transform 0.45s cubic-bezier(0.32, 0.72, 0.18, 1), opacity 0.3s;
+}
+.topbar[hidden] { display: none; }
+.topbar.show { transform: none; opacity: 1; }
+.btn-leave {
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--ink); font: inherit; font-size: 12.5px; letter-spacing: 0.08em;
+  padding: 7px 14px; cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+.btn-leave:hover { background: var(--ink); color: #171310; }
+.btn-leave kbd { margin-left: 4px; }
+.topbar-title { margin-left: auto; color: var(--ink-dim); font-size: 12.5px; letter-spacing: 0.14em; }
+.topbar-links { margin-right: 6px; }
+
+/* ── 换展 / 入场淡入淡出 ──────────────────────────── */
+.frame-wrap, .placard, .ghost-no, .hall-head, .hall-side, .hall-foot { transition: opacity 0.28s ease; }
+.swap-out .frame-wrap, .swap-out .placard, .swap-out .ghost-no { opacity: 0; }
+body.in-stage .frame-wrap, body.in-stage .placard, body.in-stage .ghost-no,
+body.in-stage .hall-head, body.in-stage .hall-side, body.in-stage .hall-foot {
+  opacity: 0; pointer-events: none;
+}
+
+/* ── 移动端 ───────────────────────────────────────── */
+@media (max-width: 880px) {
+  .mid { grid-template-columns: 1fr; }
+  .hall-side {
+    order: 2; border-right: 0; border-top: 1px solid var(--line-soft);
+    flex-direction: row; flex-wrap: wrap; gap: 26px;
+  }
+  .hall-side > section { flex: 1 1 260px; }
+  .hall-head { align-items: center; padding: 20px 22px 16px; }
+  .head-note { display: none; }
+  .title { font-size: 21px; letter-spacing: 0.22em; }
+  .sub { font-size: 9.5px; letter-spacing: 0.18em; }
+  .seal { width: 38px; height: 38px; font-size: 22px; }
+  .hall-main { padding: 22px 16px 28px; }
+  .hall-center { min-height: 0; gap: 20px; }
+  .ghost-no { font-size: 26vw; opacity: 0.8; }
+  .hall-foot { padding: 12px 22px; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .placard-note { font-size: 12.5px; }
+  .topbar { height: 46px; gap: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; animation: none !important; }
+}
