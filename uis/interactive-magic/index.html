@@ -3,123 +3,134 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>给页面施一点小魔法 · 互动魔法习作</title>
+<title>给页面施一点小魔法 · 风格习作（致敬 joshwcomeau.com）</title>
 <style>
+  /* 令牌抓取自 joshwcomeau.com 线上 CSS（2026-09）：
+     --color-background #fff / action 蓝 #4242fa / 墨色 #2f2f2f
+     --color-code-bg #1a1f23 / 警示橙 #ff9d00
+     原站字体 Wotfard（几何人文无衬线）→ 以系统无衬线近似；
+     手写体 Sriracha → 以 cursive 栈近似 */
   :root {
-    --cream: #FFFDF5;
-    --ink: #22221F;
-    --dim: #6B6A63;
-    --blue: #2F6FEB;
-    --gold: #E8A93C;
-    --pink: #E85D9E;
+    --bg: #ffffff;
+    --ink: #2f2f2f;
+    --dim: #63605c;
+    --action: #4242fa;
+    --orange: #ff9d00;
+    --code-bg: #1a1f23;
+    --border: #ececec;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    background: var(--cream); color: var(--ink);
+    background: var(--bg); color: var(--ink);
     font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-    min-height: 100vh; padding: 44px 60px; position: relative; overflow: hidden;
-    transition: background 0.45s ease, color 0.45s ease;
+    font-size: 18px; line-height: 1.7;
+    min-height: 100vh; padding: 40px 64px; position: relative; overflow: hidden;
   }
-  body.night { background: #201D2E; color: #ECEAF6; }
-  body.night .lede { color: #A9A6C0; }
-  body.night footer { color: #8E8BA8; }
-  body.night footer a { color: var(--gold); }
-  body.night .toggle { background: #2E2A44; }
-  .toggle {
-    position: absolute; top: 34px; right: 56px;
-    width: 88px; height: 44px; border-radius: 999px;
-    background: #F1EBD8; border: 2px solid var(--ink);
-    cursor: pointer; transition: background 0.45s ease;
+  header { display: flex; justify-content: space-between; align-items: center; }
+  .logo { font-weight: 800; font-size: 20px; letter-spacing: -0.01em; }
+  .logo span { color: var(--action); }
+  nav a {
+    color: var(--ink); text-decoration: none; font-size: 15.5px; font-weight: 600;
+    margin-left: 26px;
   }
-  .toggle .knob {
-    position: absolute; top: 2px; left: 3px;
-    width: 36px; height: 36px; border-radius: 50%;
-    background: var(--gold); display: grid; place-items: center; font-size: 19px;
-    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  nav a:hover { color: var(--action); }
+  h1 {
+    margin-top: 52px; font-size: 47px; line-height: 1.35; font-weight: 800;
+    letter-spacing: -0.01em; max-width: 15em;
   }
-  body.night .toggle .knob { transform: translateX(43px); }
-  .kicker { font-size: 12.5px; letter-spacing: 0.28em; color: var(--blue); font-weight: 700; }
-  h1 { font-size: 50px; line-height: 1.4; font-weight: 800; margin-top: 26px; max-width: 14em; letter-spacing: 0.01em; }
-  .grad {
-    background: linear-gradient(92deg, var(--blue), var(--pink) 55%, var(--gold));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+  h1 .wave { color: var(--action); }
+  .hand {
+    font-family: "Segoe Print", "Comic Sans MS", "KaiTi", cursive;
+    color: var(--orange); font-size: 0.62em; display: inline-block; transform: rotate(-3deg);
   }
-  .lede { color: var(--dim); font-size: 17px; line-height: 2; margin-top: 18px; max-width: 42em; }
-  .widgets { display: flex; gap: 22px; margin-top: 40px; flex-wrap: wrap; }
-  .card {
-    border: 2px solid var(--ink); border-radius: 16px; background: #fff;
-    padding: 22px 26px; box-shadow: 5px 5px 0 var(--ink);
-    min-width: 230px; transition: background 0.45s ease;
+  .lede { margin-top: 20px; max-width: 40em; color: var(--dim); font-size: 17.5px; line-height: 1.9; }
+  .lede a { color: var(--action); text-decoration: none; }
+  .lede a:hover { text-decoration: underline; text-decoration-thickness: 2px; }
+  .featured { margin-top: 34px; display: flex; gap: 20px; flex-wrap: wrap; max-width: 62em; }
+  .post {
+    flex: 1 1 260px; border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 18px 20px; background: #fff;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   }
-  body.night .card { background: #2B2740; box-shadow: 5px 5px 0 #0E0D16; }
-  .card h3 { font-size: 15.5px; letter-spacing: 0.04em; }
-  .card p { font-size: 13px; color: var(--dim); margin-top: 8px; line-height: 1.8; }
-  body.night .card p { color: #A9A6C0; }
-  .sparkle-btn {
-    margin-top: 16px; font: inherit; font-size: 14.5px; font-weight: 700;
-    color: #fff; background: var(--pink); border: 2px solid var(--ink);
-    border-radius: 12px; padding: 10px 20px; cursor: pointer;
-    box-shadow: 3px 3px 0 var(--ink); transition: transform 0.15s ease, box-shadow 0.15s ease;
+  .post:hover {
+    transform: translateY(-4px) rotate(-0.4deg);
+    box-shadow: 0 12px 28px -14px rgba(66, 66, 250, 0.45);
+    border-color: var(--action);
   }
-  .sparkle-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
-  .sparkle-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
-  .hint { font-size: 12.5px; color: var(--dim); margin-top: 12px; }
+  .post .tag {
+    display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--action); background: rgba(66, 66, 250, 0.08);
+    border-radius: 999px; padding: 2px 10px;
+  }
+  .post h3 { font-size: 17px; margin-top: 10px; }
+  .post p { font-size: 13.5px; color: var(--dim); margin-top: 6px; line-height: 1.75; }
+  .magic {
+    margin-top: 30px; display: inline-flex; align-items: center; gap: 14px;
+    font-size: 15px; color: var(--dim);
+  }
+  .magic button {
+    font: inherit; font-size: 15px; font-weight: 700; color: #fff;
+    background: var(--action); border: none; border-radius: 10px;
+    padding: 10px 22px; cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s;
+  }
+  .magic button:hover { transform: translateY(-2px); box-shadow: 0 6px 16px -6px rgba(66, 66, 250, 0.7); }
+  .magic button:active { transform: translateY(1px); box-shadow: none; }
+  .counter { font-family: ui-monospace, Consolas, monospace; font-size: 13px; color: var(--ink); background: var(--code-bg); color: #d7dde3; padding: 3px 9px; border-radius: 6px; }
   footer {
-    position: absolute; left: 60px; right: 60px; bottom: 26px;
+    position: absolute; left: 64px; right: 64px; bottom: 22px;
     display: flex; justify-content: space-between; font-size: 12.5px; color: var(--dim);
-    border-top: 1.5px solid var(--ink); padding-top: 13px;
+    border-top: 1.5px solid var(--border); padding-top: 12px;
   }
-  footer a { color: var(--blue); text-decoration: none; font-weight: 700; }
-  .spark { position: fixed; pointer-events: none; font-size: 20px; z-index: 9; }
+  footer a { color: var(--action); text-decoration: none; font-weight: 600; }
+  .spark { position: fixed; pointer-events: none; z-index: 9; font-size: 18px; }
 </style>
 </head>
 <body>
-  <div class="toggle" id="toggle" role="switch" aria-checked="false" tabindex="0" title="昼夜开关">
-    <div class="knob">☀️</div>
+  <header>
+    <div class="logo">魔法<span>工坊</span></div>
+    <nav>
+      <a href="#" onclick="return false">文章</a>
+      <a href="#" onclick="return false">课程</a>
+      <a href="#" onclick="return false">通讯</a>
+      <a href="#" onclick="return false">关于</a>
+    </nav>
+  </header>
+
+  <h1>你好，朋友。<span class="wave">〰</span><br>欢迎来到一个<span class="hand">偷偷会动</span>的网站。</h1>
+  <p class="lede">这个站有个毛病：几乎每个元素都被施了小法术。光标停一下、按钮按一下、开关翻一下，都会得到回应。好消息是——<a href="#" onclick="return false">魔法全部开源</a>，欢迎抄回去。</p>
+
+  <div class="featured">
+    <div class="post">
+      <span class="tag">交互教程</span>
+      <h3>弹簧、回弹与一点物理：让开关自己会弹</h3>
+      <p>从胡克定律讲到 cubic-bezier，最后做出一枚怎么按都心情很好的开关。</p>
+    </div>
+    <div class="post">
+      <span class="tag">创意编码</span>
+      <h3>粒子的礼貌：怎么撒一把星星才不吵</h3>
+      <p>数量、时机、缓动曲线的三重奏。彩蛋的分寸感，是魔法与噪音的分界线。</p>
+    </div>
   </div>
 
-  <p class="kicker">INTERACTIVE · 对访客眨眼睛</p>
-  <h1>给页面<span class="grad">施一点</span>小魔法。<br>不用大，要会笑。</h1>
-  <p class="lede">好的开发者网站有一种狡猾的温柔：你只是想读篇文章，它却偷偷准备了十处惊喜——开关会翻跟头，按钮会开花，光标路过的地方都有回响。</p>
-
-  <div class="widgets">
-    <div class="card">
-      <h3>✨ 开花按钮</h3>
-      <p>据说按下去会有好事发生。科学尚未证实，但试过的人都笑了。</p>
-      <button class="sparkle-btn" id="bloom">点我开花</button>
-      <p class="hint" id="hint">已开花 0 次</p>
-    </div>
-    <div class="card">
-      <h3>🌙 昼夜开关</h3>
-      <p>右上角那枚开关，翻过去就是晚上。月亮出来时，整页陪你换睡衣。</p>
-    </div>
+  <div class="magic">
+    <button id="bloom" type="button">点我撒把星星 ✨</button>
+    <span>已施法 <span class="counter" id="count">0</span> 次</span>
   </div>
 
   <footer>
-    <span>风格习作 · 学其"处处有回应"的互动心法，彩蛋原创</span>
+    <span>风格习作 · 令牌抓取自原站线上 CSS（白底 #fff / 动作蓝 #4242fa / 代码底 #1a1f23）；Wotfard 以系统无衬线近似；彩蛋与文字原创</span>
     <span>致敬 <a href="https://www.joshwcomeau.com/" target="_blank" rel="noopener">joshwcomeau.com</a> · Josh Comeau</span>
   </footer>
 
 <script>
-  // 昼夜开关
-  const toggle = document.getElementById("toggle");
-  const knob = toggle.querySelector(".knob");
-  function flip() {
-    const night = document.body.classList.toggle("night");
-    toggle.setAttribute("aria-checked", night);
-    knob.textContent = night ? "🌙" : "☀️";
-  }
-  toggle.addEventListener("click", flip);
-  toggle.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
-
-  // 开花按钮：喷一把 ✨
-  let blooms = 0;
+  let n = 0;
   document.getElementById("bloom").addEventListener("click", (e) => {
-    blooms++;
-    document.getElementById("hint").textContent = "已开花 " + blooms + " 次" + (blooms > 3 ? "——花园已经管不住了" : "");
+    n++;
+    document.getElementById("count").textContent = n;
     const r = e.target.getBoundingClientRect();
-    const glyphs = ["✨", "🌸", "⭐️", "🌟", "💫"];
-    for (let i = 0; i < 14; i++) {
+    const glyphs = ["✨", "⭐️", "💫", "🌟"];
+    for (let i = 0; i < 12; i++) {
       const s = document.createElement("span");
       s.className = "spark";
       s.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
@@ -127,9 +138,9 @@
       s.style.top = r.top + "px";
       document.body.appendChild(s);
       s.animate([
-        { transform: "translate(0,0) scale(0.6)", opacity: 1 },
-        { transform: `translate(${(Math.random() - 0.5) * 220}px, ${-60 - Math.random() * 160}px) scale(${0.9 + Math.random()}) rotate(${(Math.random() - 0.5) * 260}deg)`, opacity: 0 },
-      ], { duration: 900 + Math.random() * 700, easing: "cubic-bezier(0.22,0.9,0.36,1)" }).onfinish = () => s.remove();
+        { transform: "translate(0,0) scale(0.5)", opacity: 1 },
+        { transform: `translate(${(Math.random() - 0.5) * 240}px, ${-80 - Math.random() * 140}px) rotate(${(Math.random() - 0.5) * 300}deg)`, opacity: 0 },
+      ], { duration: 900 + Math.random() * 600, easing: "cubic-bezier(0.2,0.9,0.3,1)" }).onfinish = () => s.remove();
     }
   });
 </script>
