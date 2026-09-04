@@ -245,6 +245,31 @@ body.in-stage .hall-head, body.in-stage .hall-side, body.in-stage .hall-foot {
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* ── 版本史专柜 ───────────────────────────────────── */
+.versions { width: var(--frame-w, 720px); max-width: 100%; }
+.versions-head { color: var(--gold); font-size: 10.5px; letter-spacing: 0.34em; margin-bottom: 12px; }
+.versions-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.version-card {
+  flex: 1 1 200px; text-align: left;
+  background: rgba(242, 232, 208, 0.04);
+  border: 1px solid var(--line-soft); border-radius: 10px;
+  padding: 12px 16px; display: flex; flex-direction: column; gap: 3px;
+  font: inherit; color: inherit;
+  transition: border-color 0.25s, background 0.25s;
+}
+button.version-card { cursor: pointer; }
+button.version-card:hover { border-color: var(--gold); background: rgba(242, 232, 208, 0.07); }
+.version-card.restoring { border-style: dashed; cursor: help; }
+.v-label { font-size: 13px; color: var(--ink); letter-spacing: 0.06em; }
+.v-year { font-size: 10.5px; color: var(--gold); letter-spacing: 0.2em; }
+.v-note { font-size: 12px; color: var(--ink-dim); line-height: 1.7; margin-top: 2px; }
+.version-card.restoring .v-label::after {
+  content: "修复中";
+  margin-left: 8px; font-size: 10px; color: var(--seal);
+  border: 1px solid var(--seal); border-radius: 4px;
+  padding: 0 5px; letter-spacing: 0.15em; vertical-align: 1px;
+}
+
 /* ── 特展巡游幕布 ─────────────────────────────────── */
 .tour {
   position: fixed; inset: 0; z-index: 55;

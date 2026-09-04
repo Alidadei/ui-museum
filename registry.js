@@ -25,8 +25,8 @@
  *    note    策展人注：这件展品美在哪
  *    highlights  高光解剖：[{ x, y, title, text }]，x/y 为缩览上的
  *              百分比坐标，点按弹出「细看这里」标注，可省
- *    versions    版本史：[{ label, year, url, loan }]，loan=true 表示
- *              借展（如互联网档案馆快照），≥2 条才在馆内展示，可省
+ *    versions    版本史：[{ label, year, url, note }]，≥2 条才在馆内
+ *              展示；url 可步入，省略 url 的版本以「修复中」凭证陈列
  * ============================================================ */
 
 const EXHIBITS = [
@@ -49,6 +49,19 @@ const EXHIBITS = [
       { x: 24, y: 9, title: "毛玻璃仪表台", text: "导航浮在星空上，backdrop blur 只让光斑柔和地透出来。" },
       { x: 50, y: 44, title: "会呼吸的星球", text: "3D 星球等浏览器空闲时才升起——性能与氛围互相成全。" },
       { x: 38, y: 78, title: "暖棕米的宇宙", text: "玻璃卡片把中文排版泡在暖光里，信息密度再高也不吵。" },
+    ],
+    versions: [
+      {
+        label: "Astro v2 · 现行版",
+        year: "2026",
+        url: "https://alidadei.github.io/",
+        note: "三层渐进加载的宇宙，中英双语。",
+      },
+      {
+        label: "Jekyll 学术主页",
+        year: "早期",
+        note: "academicpages 模板：论文、演讲、教学目录俱全。源码封存于仓库 nostalgia_history 分支，待修复后开放步入。",
+      },
     ],
   },
 ];

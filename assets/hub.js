@@ -37,6 +37,7 @@
     busy: false,    // 飞行动画进行中
     hotLayer: null, // 高光解剖图层（fixed，与相框同步落位）
     tour: null,     // 特展巡游态 { ex, phase, idx }
+    altSrc: null,   // 正在观展的版本 url（非主源时记录，归馆后还原）
   };
 
   const topbarH = () => (window.innerWidth < 640 ? 46 : 52);
@@ -215,11 +216,12 @@
       w = Math.max(260, Math.min(cw, 760));
     } else {
       const ch = center.clientHeight;
-      let ph = placardEl.offsetHeight;
-      w = Math.max(260, Math.min(cw, (ch - ph - 26) * ex.aspect, 1120));
+      const extraH = () => (versionsBox && !versionsBox.hidden ? versionsBox.offsetHeight : 0);
+      let ph = placardEl.offsetHeight + extraH();
+      let w = Math.max(260, Math.min(cw, (ch - ph - 26) * ex.aspect, 1120));
       frame.style.width = w + "px";
       body.style.setProperty("--frame-w", w + "px");
-      ph = placardEl.offsetHeight;  // 相框宽度会影响展签换行，二轮收敛
+      ph = placardEl.offsetHeight + extraH();  // 相框宽度会影响展签换行，二轮收敛
       w = Math.max(260, Math.min(cw, (ch - ph - 26) * ex.aspect, 1120));
     }
     frame.style.width = w + "px";
@@ -285,6 +287,13 @@
     topbar.classList.remove("show");
     setTimeout(() => { topbar.hidden = true; }, 400);
     if (!state.tour && location.hash !== "#/") location.hash = "#/";
+    if (state.altSrc && state.port) {
+      const ex = cur();
+      frame.dataset.loaded = "false";
+      state.port.classList.remove("loaded");
+      state.port.querySelector("iframe").src = ex.path || ex.url;
+      state.altSrc = null;
+    }
     layoutHall();
     const last = state.port.getBoundingClientRect();
     flip(state.port, first, last, () => { state.busy = false; });
@@ -311,6 +320,7 @@
     ghostNo.textContent = ex.cn || `№${ex.no}`;
     markIndex();
     renderHighlights(ex);
+    renderVersions(ex);
     layoutHall();
     createPort(ex);
   }
@@ -388,6 +398,63 @@
     toastEl.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2600);
+  }
+
+  /* ── 版本史专柜：可步入的版本 + 修复中的凭证 ──────── */
+
+  const versionsBox = $("versionsBox");
+
+  function renderVersions(ex) {
+    if (!versionsBox) return;
+    const vs = ex.versions || [];
+    if (vs.length < 2) {
+      versionsBox.hidden = true;
+      versionsBox.innerHTML = "";
+      return;
+    }
+    versionsBox.hidden = false;
+    versionsBox.innerHTML = "";
+    const head = document.createElement("p");
+    head.className = "versions-head";
+    head.textContent = "版本 · EDITIONS";
+    versionsBox.appendChild(head);
+    const row = document.createElement("div");
+    row.className = "versions-row";
+    vs.forEach((v) => {
+      const card = document.createElement(v.url ? "button" : "div");
+      if (v.url) card.type = "button";
+      card.className = "version-card" + (v.url ? "" : " restoring");
+      const l = document.createElement("span");
+      l.className = "v-label";
+      l.textContent = v.label;
+      const y = document.createElement("span");
+      y.className = "v-year";
+      y.textContent = v.year;
+      const n = document.createElement("span");
+      n.className = "v-note";
+      n.textContent = v.note || (v.url ? "" : "修复中，暂不开放步入");
+      card.append(l, y, n);
+      if (v.url) {
+        card.addEventListener("click", () => enterVersion(v));
+      } else {
+        card.addEventListener("click", () => toast(`「${v.label}」在修复室，暂不开放步入`));
+      }
+      row.appendChild(card);
+    });
+    versionsBox.appendChild(row);
+  }
+
+  function enterVersion(v) {
+    if (state.mode !== "hall" || state.busy || !state.port) return;
+    const ex = cur();
+    const primary = ex.path || ex.url;
+    if (v.url !== primary) {
+      state.altSrc = v.url;
+      frame.dataset.loaded = "false";
+      state.port.classList.remove("loaded");
+      state.port.querySelector("iframe").src = v.url;
+    }
+    enterStage();
   }
 
   /* ── 特展巡游：前言 → 沿展线逐件观展 → 闭幕 ──────── */
