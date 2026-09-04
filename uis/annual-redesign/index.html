@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一年一重设计 v19 · 年度重设计习作</title>
+<style>
+  :root {
+    --paper: #F3E7CE;
+    --ink: #40342A;
+    --accent: #C75B39;
+    --deep: #8A4A2B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: "Avenir Next", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh; transition: background 0.5s ease;
+  }
+  .stripe {
+    height: 16px;
+    background: repeating-linear-gradient(45deg, var(--accent) 0 14px, var(--deep) 14px 28px);
+    transition: background 0.5s ease;
+  }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 22px 56px; font-size: 12.5px; letter-spacing: 0.3em;
+  }
+  header b { letter-spacing: 0.24em; }
+  main { padding: 6px 56px 0; }
+  .v {
+    font-size: clamp(120px, 22vw, 230px); font-weight: 900; line-height: 0.95;
+    letter-spacing: -0.02em; color: var(--accent);
+    text-shadow: 7px 7px 0 var(--deep);
+    transition: color 0.5s ease, text-shadow 0.5s ease;
+    font-family: "Arial Black", "Avenir Next", sans-serif;
+  }
+  .v small { font-size: 0.32em; vertical-align: 0.5em; letter-spacing: 0.1em; color: var(--ink); text-shadow: none; font-weight: 700; }
+  h1 { font-size: 30px; font-weight: 700; margin-top: 8px; letter-spacing: 0.06em; }
+  .lede { color: var(--deep); margin-top: 12px; font-size: 16px; line-height: 1.9; max-width: 40em; }
+  .paintbox { margin-top: 44px; }
+  .paintbox p { font-size: 13px; letter-spacing: 0.22em; color: var(--deep); margin-bottom: 14px; }
+  .chips { display: flex; gap: 12px; flex-wrap: wrap; }
+  .chip {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 3px solid var(--paper); outline: 1.5px solid var(--ink);
+    cursor: pointer; position: relative; transition: transform 0.18s ease;
+    font: inherit;
+  }
+  .chip:hover { transform: translateY(-6px) rotate(8deg); }
+  .chip.on { outline: 3px solid var(--ink); transform: scale(1.14); }
+  .chip span {
+    position: absolute; top: 46px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: var(--deep); letter-spacing: 0.1em; opacity: 0; transition: opacity 0.18s;
+  }
+  .chip:hover span, .chip.on span { opacity: 1; }
+  footer {
+    position: absolute; left: 56px; right: 56px; bottom: 26px;
+    display: flex; justify-content: space-between; font-size: 12.5px; color: var(--deep);
+    border-top: 2px solid var(--ink); padding-top: 14px;
+  }
+  footer a { color: var(--accent); text-decoration: none; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="stripe"></div>
+  <header><b>ANNUAL REDESIGN · 年度重设计</b><span>EST. 2008 — RUNNING</span></header>
+
+  <main>
+    <div class="v"><small>V</small>19</div>
+    <h1>一年一次，把房子推倒重盖。</h1>
+    <p class="lede">别问为什么要重设计——旧版不会消失，它们变成一排颜料罐，摆在门廊上。想怀旧的人，伸手就能蘸到从前的颜色。</p>
+
+    <div class="paintbox">
+      <p>往年颜料 · 点一罐换装</p>
+      <div class="chips" id="chips"></div>
+    </div>
+  </main>
+
+  <footer>
+    <span>风格习作 · 学其"版本即内容"的仪式感，颜料为原创配色</span>
+    <span>致敬 <a href="https://lynnandtonic.com/" target="_blank" rel="noopener">lynnandtonic.com</a> 第 19 版 · Lynn Fisher</span>
+  </footer>
+
+<script>
+  // 十九罐"往年颜料"（原创的复古暖色变奏，非真实历史配色）
+  const paints = [
+    ["#E8D5B5","#A85638"],["#EFE3C8","#7C6A46"],["#E4C9A6","#B04A2A"],
+    ["#F2E2C4","#5E7D5A"],["#E7CFA9","#96502E"],["#DEC296","#C2603C"],
+    ["#F0DAB2","#82563B"],["#E9D2AC","#B85C31"],["#E2C79E","#6E7F52"],
+    ["#F1E0BE","#A34A2F"],["#E5CBA3","#7A4A31"],["#ECD6B0","#C46B3F"],
+    ["#DFC198","#8B5A3C"],["#EFD9B4","#B14E2E"],["#E3C89F","#5D7055"],
+    ["#EAD0A8","#9C5533"],["#F3E5C6","#CA6B41"],["#E6CBA2","#8A4A2B"],
+    ["#F3E7CE","#C75B39"],
+  ];
+  const chips = document.getElementById("chips");
+  paints.forEach((p, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip" + (i === paints.length - 1 ? " on" : "");
+    b.style.background = p[1];
+    const tag = document.createElement("span");
+    tag.textContent = "v" + (i + 1);
+    b.appendChild(tag);
+    b.title = "v" + (i + 1);
+    b.addEventListener("click", () => {
+      document.documentElement.style.setProperty("--paper", p[0]);
+      document.documentElement.style.setProperty("--accent", p[1]);
+      chips.querySelectorAll(".chip").forEach((c) => c.classList.remove("on"));
+      b.classList.add("on");
+    });
+    chips.appendChild(b);
+  });
+</script>
+</body>
+</html>
