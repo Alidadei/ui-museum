@@ -268,6 +268,7 @@
     body.classList.add("in-stage");
     topbar.hidden = false;
     requestAnimationFrame(() => topbar.classList.add("show"));
+    stampCurrent();
     const want = "#/exhibit/" + cur().id;
     if (location.hash !== want) location.hash = want;
     const last = state.port.getBoundingClientRect();
@@ -333,6 +334,61 @@
     }
   }
 
+  /* ── 巡礼印章：步入过哪件展品，就盖上哪枚章 ──────── */
+
+  const STAMP_KEY = "ui-museum-stamps";
+  const stampGrid = $("stampGrid"), stampProgress = $("stampProgress"), toastEl = $("toast");
+
+  function getStamps() {
+    try { return JSON.parse(localStorage.getItem(STAMP_KEY)) || []; }
+    catch (_) { return state._stamps || []; }
+  }
+
+  function saveStamps(arr) {
+    state._stamps = arr;
+    try { localStorage.setItem(STAMP_KEY, JSON.stringify(arr)); } catch (_) { /* 隐私模式下仅内存记账 */ }
+  }
+
+  function renderPassport() {
+    if (!stampGrid) return;
+    const done = getStamps();
+    stampGrid.innerHTML = "";
+    state.list.forEach((ex) => {
+      const s = document.createElement("span");
+      s.className = "stamp " + (done.includes(ex.id) ? "done" : "todo");
+      s.textContent = ex.cn || ex.no;
+      s.title = `${ex.title} · ${done.includes(ex.id) ? "已盖章" : "待步入"}`;
+      stampGrid.appendChild(s);
+    });
+    stampProgress.textContent = `已集 ${done.length} / ${state.list.length} 枚印章`;
+  }
+
+  function stampCurrent() {
+    const ex = cur();
+    if (!ex) return;
+    const done = getStamps();
+    if (done.includes(ex.id)) return;
+    done.push(ex.id);
+    saveStamps(done);
+    renderPassport();
+    if (done.length >= state.list.length) {
+      toast("全馆巡礼达成 —— 荣誉访客 ◈");
+      stampGrid.classList.add("glow");
+      setTimeout(() => stampGrid.classList.remove("glow"), 3200);
+    } else {
+      toast(`已为 №${ex.no} 盖章`);
+    }
+  }
+
+  let toastTimer = 0;
+  function toast(msg) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2600);
+  }
+
   /* ── 路由 / 键盘 / 视口 ────────────────────────── */
 
   function parseHash() {
@@ -389,6 +445,7 @@
   const want = parseHash();
   const start = Math.max(0, findIdx(want));
   selectExhibit(start);
+  renderPassport();
   if (want && findIdx(want) >= 0) enterStage();
   window.addEventListener("load", layoutHall);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutHall);
