@@ -28,6 +28,7 @@
 
   // registry.js 里的顶层 const 不会挂到 window 上，按全局词法绑定读取
   const list = typeof EXHIBITS !== "undefined" ? EXHIBITS : window.EXHIBITS || [];
+  const specialShows = typeof EXHIBITIONS !== "undefined" ? EXHIBITIONS : window.EXHIBITIONS || [];
   const state = {
     list,
     current: -1,
@@ -270,7 +271,7 @@
     requestAnimationFrame(() => topbar.classList.add("show"));
     stampCurrent();
     const want = "#/exhibit/" + cur().id;
-    if (location.hash !== want) location.hash = want;
+    if (!state.tour && location.hash !== want) location.hash = want;
     const last = state.port.getBoundingClientRect();
     flip(state.port, first, last, () => { state.busy = false; });
   }
@@ -283,7 +284,7 @@
     body.classList.remove("in-stage");
     topbar.classList.remove("show");
     setTimeout(() => { topbar.hidden = true; }, 400);
-    if (location.hash !== "#/") location.hash = "#/";
+    if (!state.tour && location.hash !== "#/") location.hash = "#/";
     layoutHall();
     const last = state.port.getBoundingClientRect();
     flip(state.port, first, last, () => { state.busy = false; });
@@ -389,6 +390,137 @@
     toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2600);
   }
 
+  /* ── 特展巡游：前言 → 沿展线逐件观展 → 闭幕 ──────── */
+
+  const specialList = $("specialList"), tourEl = $("tour"),
+        tourNo = $("tourNo"), tourTitle = $("tourTitle"),
+        tourText = $("tourText"), tourActions = $("tourActions");
+
+  function buildSpecial() {
+    if (!specialList) return;
+    specialList.innerHTML = "";
+    if (!specialShows.length) {
+      specialList.closest(".special").hidden = true;
+      return;
+    }
+    specialShows.forEach((sp) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.innerHTML = `<span class="no">${sp.no}</span><span class="t"></span>`;
+      b.querySelector(".t").textContent = sp.title;
+      b.addEventListener("click", () => enterTour(sp.id));
+      li.appendChild(b);
+      specialList.appendChild(li);
+    });
+  }
+
+  function findTourIdx(id) {
+    return specialShows.findIndex((s) => s.id === id);
+  }
+
+  function enterTour(id) {
+    if (findTourIdx(id) < 0 || state.busy) return;
+    state.tour = { ex: specialShows[findTourIdx(id)], phase: "preface", idx: 0 };
+    const want = "#/exhibition/" + id;
+    if (location.hash !== want) location.hash = want;
+    showTourPhase();
+  }
+
+  function addTourBtn(label, fn, primary) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = primary ? "btn-enter" : "tour-skip";
+    b.textContent = label;
+    b.addEventListener("click", fn);
+    tourActions.appendChild(b);
+  }
+
+  function showTourPhase() {
+    const t = state.tour;
+    if (!t) return;
+    body.classList.add("in-tour");
+    tourNo.textContent = `特展 № ${t.ex.no}`;
+    tourTitle.textContent = t.ex.title;
+    tourActions.innerHTML = "";
+    if (t.phase === "item") {
+      tourEl.classList.remove("show");
+      setTimeout(() => { if (!state.tour || state.tour.phase === "item") tourEl.hidden = true; }, 340);
+      return;
+    }
+    tourEl.hidden = false;
+    requestAnimationFrame(() => tourEl.classList.add("show"));
+    tourText.textContent = t.phase === "preface" ? t.ex.preface : (t.ex.closing || "展览到此——感谢观展。");
+    if (t.phase === "preface") {
+      addTourBtn("开展 →", () => tourGotoItem(0), true);
+      addTourBtn("先不看了", exitTour);
+    } else {
+      addTourBtn("回到总台", exitTour, true);
+    }
+  }
+
+  function tourGotoItem(i) {
+    const t = state.tour;
+    if (!t || state.busy) return;
+    t.phase = "item";
+    const target = findIdx(t.ex.items[i]);
+    if (target < 0) return;
+    const needSelect = target !== state.current;
+    const doEnter = () => {
+      if (!state.tour) return;
+      if (needSelect) swapTo(target);
+      setTimeout(() => {
+        if (!state.tour) return;
+        if (state.mode !== "stage") enterStage();
+        showTourPhase();  // item 相位：收起前言幕布
+        toast(`特展 · ${t.idx + 1}/${t.ex.items.length}`);
+      }, needSelect ? 320 : 30);
+    };
+    if (state.mode === "stage" && !state.busy) {
+      leaveStage();
+      setTimeout(doEnter, REDUCED ? 30 : DUR + 80);
+    } else {
+      doEnter();
+    }
+  }
+
+  function tourStep(dir) {
+    const t = state.tour;
+    if (!t || state.busy) return;
+    if (dir > 0) {
+      if (t.phase === "preface") tourGotoItem(0);
+      else if (t.idx < t.ex.items.length - 1) tourGotoItem(t.idx + 1);
+      else tourClosing();
+    } else {
+      if (t.phase === "closing") tourGotoItem(t.ex.items.length - 1);
+      else if (t.phase === "item" && t.idx === 0) { t.phase = "preface"; if (state.mode === "stage") leaveStage(); showTourPhase(); }
+      else if (t.phase === "item") tourGotoItem(t.idx - 1);
+    }
+  }
+
+  function tourClosing() {
+    const t = state.tour;
+    if (!t) return;
+    t.phase = "closing";
+    if (state.mode === "stage" && !state.busy) leaveStage();
+    showTourPhase();
+  }
+
+  function exitTour() {
+    if (!state.tour) return;
+    state.tour = null;
+    body.classList.remove("in-tour");
+    tourEl.classList.remove("show");
+    setTimeout(() => { tourEl.hidden = true; }, 340);
+    if (location.hash.indexOf("#/exhibition/") === 0) location.hash = "#/";
+    if (state.mode === "stage" && !state.busy) leaveStage();
+  }
+
+  function parseTourHash() {
+    const m = location.hash.match(/^#\/exhibition\/([A-Za-z0-9_-]+)/);
+    return m ? m[1] : null;
+  }
+
   /* ── 路由 / 键盘 / 视口 ────────────────────────── */
 
   function parseHash() {
@@ -397,6 +529,13 @@
   }
 
   window.addEventListener("hashchange", () => {
+    const tourId = parseTourHash();
+    if (tourId) {
+      if (findTourIdx(tourId) < 0) { location.hash = "#/"; return; }
+      if (!state.tour || state.tour.ex.id !== tourId) enterTour(tourId);
+      return;
+    }
+    if (state.tour) { exitTour(); return; }
     const id = parseHash();
     if (id) {
       const i = findIdx(id);
@@ -412,7 +551,13 @@
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      if (state.mode === "stage") leaveStage();
+      if (state.tour) exitTour();
+      else if (state.mode === "stage") leaveStage();
+      return;
+    }
+    if (state.tour) {
+      if (e.key === "ArrowRight" || (e.key === "Enter" && state.tour.phase !== "closing")) tourStep(1);
+      else if (e.key === "ArrowLeft") tourStep(-1);
       return;
     }
     if (state.mode !== "hall" || state.busy) return;
@@ -442,11 +587,14 @@
   /* ── 开馆 ──────────────────────────────────────── */
 
   buildIndex();
+  buildSpecial();
   const want = parseHash();
   const start = Math.max(0, findIdx(want));
   selectExhibit(start);
   renderPassport();
-  if (want && findIdx(want) >= 0) enterStage();
+  const tourWant = parseTourHash();
+  if (tourWant && findTourIdx(tourWant) >= 0) enterTour(tourWant);
+  else if (want && findIdx(want) >= 0) enterStage();
   window.addEventListener("load", layoutHall);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutHall);
 })();

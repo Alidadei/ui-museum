@@ -77,8 +77,8 @@ a { color: inherit; }
   font-size: 10.5px; font-weight: 400; letter-spacing: 0.34em;
   color: var(--ink-faint); margin-bottom: 14px;
 }
-.index ol { list-style: none; display: flex; flex-direction: column; gap: 2px; }
-.index button {
+.index ol, .special ol { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.index button, .special button {
   width: 100%; text-align: left; background: none; border: 0;
   border-left: 2px solid transparent;
   color: var(--ink-dim); font: inherit; font-size: 13px; letter-spacing: 0.06em;
@@ -86,12 +86,12 @@ a { color: inherit; }
   display: flex; gap: 10px; align-items: baseline;
   transition: color 0.2s, background 0.2s, border-color 0.2s;
 }
-.index button:hover { color: var(--ink); }
+.index button:hover, .special button:hover { color: var(--ink); }
 .index button.active {
   color: var(--ink); border-left-color: var(--seal);
   background: rgba(242, 232, 208, 0.05);
 }
-.index .no { flex: none; color: var(--gold); font-size: 11px; letter-spacing: 0.12em; }
+.index .no, .special .no { flex: none; color: var(--gold); font-size: 11px; letter-spacing: 0.12em; }
 .index .ghost {
   color: var(--ink-faint); font-size: 11.5px; letter-spacing: 0.22em;
   padding: 10px 12px; border-top: 1px dashed var(--line-soft); margin-top: 8px;
@@ -245,6 +245,36 @@ body.in-stage .hall-head, body.in-stage .hall-side, body.in-stage .hall-foot {
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* ── 特展巡游幕布 ─────────────────────────────────── */
+.tour {
+  position: fixed; inset: 0; z-index: 55;
+  display: grid; place-items: center; padding: 20px;
+  background: rgba(13, 10, 8, 0.82);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  opacity: 0; transition: opacity 0.32s ease;
+}
+.tour[hidden] { display: none; }
+.tour.show { opacity: 1; }
+.tour-card {
+  max-width: 600px;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 14px;
+  padding: 40px 44px;
+  box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.8);
+}
+.tour-no { color: var(--gold); font-size: 11px; letter-spacing: 0.34em; }
+.tour-title {
+  font-family: var(--serif); font-weight: 400; font-size: 28px;
+  letter-spacing: 0.1em; margin-top: 10px;
+}
+.tour-text { color: var(--ink-dim); font-size: 14.5px; line-height: 2.1; margin-top: 18px; }
+.tour-actions { margin-top: 26px; display: flex; gap: 18px; align-items: center; }
+.tour-skip {
+  background: none; border: 0; color: var(--ink-faint);
+  font: inherit; font-size: 12.5px; letter-spacing: 0.1em; cursor: pointer;
+  transition: color 0.2s;
+}
+.tour-skip:hover { color: var(--ink-dim); }
+
 /* ── 高光解剖：缩览热区 ───────────────────────────── */
 .hotspots { position: fixed; z-index: 45; pointer-events: none; transition: opacity 0.28s ease; }
 body.in-stage .hotspots { opacity: 0; }
@@ -307,6 +337,7 @@ body.in-stage .hotspots { opacity: 0; }
   .hall-foot { padding: 12px 22px; flex-direction: column; align-items: flex-start; gap: 6px; }
   .placard-note { font-size: 12.5px; }
   .topbar { height: 46px; gap: 10px; }
+  .tour-card { padding: 30px 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
