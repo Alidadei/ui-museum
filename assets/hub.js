@@ -285,6 +285,13 @@
     const ex = state.list[i];
     destroyPort();
     frame.dataset.loaded = "false";
+    renderExhibitInfo(ex);
+    layoutHall();
+    createPort(ex);
+  }
+
+  /* 展签与配套图层（供 hall 换展与 stage 原地换展共用） */
+  function renderExhibitInfo(ex) {
     elNo.textContent = `馆藏 № ${ex.no}`;
     elTitle.textContent = ex.title;
     elMeta.textContent = [ex.year, ex.origin, (ex.medium || []).join(" / ")]
@@ -298,8 +305,19 @@
     markIndex();
     renderHighlights(ex);
     renderVersions(ex);
-    layoutHall();
-    createPort(ex);
+  }
+
+  /* 观展态下原地换展：不收相框，直接换片（配合直链跳转） */
+  function stageSwapTo(i) {
+    const ex = state.list[i];
+    if (!ex || !state.port) return;
+    state.current = i;
+    state.altSrc = null;
+    frame.dataset.loaded = "false";
+    state.port.classList.remove("loaded");
+    state.port.querySelector("iframe").src = ex.path || ex.url;
+    renderExhibitInfo(ex);
+    stampCurrent();
   }
 
   function swapTo(i) {
@@ -507,7 +525,8 @@
     const t = state.tour;
     if (!t || state.busy) return;
     t.phase = "item";
-    const target = findIdx(t.ex.items[i]);
+    t.idx = Math.max(0, Math.min(i, t.ex.items.length - 1));
+    const target = findIdx(t.ex.items[t.idx]);
     if (target < 0) return;
     const needSelect = target !== state.current;
     const doEnter = () => {
@@ -584,7 +603,11 @@
     if (id) {
       const i = findIdx(id);
       if (i < 0) { location.hash = "#/"; return; }
-      if (state.mode === "hall" && !state.busy) {
+      if (state.mode === "stage") {
+        if (!state.busy && i !== state.current) stageSwapTo(i);
+        return;
+      }
+      if (!state.busy) {
         if (i !== state.current) selectExhibit(i);
         enterStage();
       }
