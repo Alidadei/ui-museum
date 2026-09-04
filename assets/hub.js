@@ -230,33 +230,10 @@
   }
 
   /* ── FLIP：同一元素在两个矩形间飞行 ─────────────── */
+  /* 实现已入库为馆藏原子 原002 flip-step（shared/flip-step/flip.js），此处领用 */
 
   function flip(el, first, last, done) {
-    const dx = first.left - last.left;
-    const dy = first.top - last.top;
-    const sx = first.width / last.width || 1;
-    const sy = first.height / last.height || 1;
-    let fired = false;
-    const onEnd = (e) => {
-      if (e.target === el && e.propertyName === "transform") finish();
-    };
-    const finish = () => {
-      if (fired) return;
-      fired = true;
-      el.removeEventListener("transitionend", onEnd);
-      el.style.transition = "none";
-      el.style.transform = "none";
-      done();
-    };
-    if (REDUCED) { finish(); return; }
-    el.style.transition = "none";
-    el.style.transformOrigin = "0 0";
-    el.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
-    void el.offsetWidth;
-    el.style.transition = `transform ${DUR}ms cubic-bezier(0.32, 0.72, 0.18, 1)`;
-    el.style.transform = "translate(0px, 0px) scale(1, 1)";
-    el.addEventListener("transitionend", onEnd);
-    setTimeout(finish, DUR + 150);
+    flipFit(el, first, last, { duration: DUR, done });
   }
 
   /* ── 步入 / 归馆 ───────────────────────────────── */

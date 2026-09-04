@@ -1,18 +1,11 @@
 /* ============================================================
    界面收藏馆 · 总台样式
-   零依赖：无外部字体、无框架；暖棕米色 × 馆藏印章红
+   零构建：无外部字体、无框架；暖土色 × 馆藏印章红
+   色票已入库为馆藏原子 原001（shared/earth-tokens/），此处领用
    ============================================================ */
+@import url("../shared/earth-tokens/tokens.css");
+
 :root {
-  --bg: #291f12;
-  --bg-soft: #46331a;
-  --ink: #f2e8d0;
-  --ink-dim: #b3a17f;
-  --ink-faint: #867355;
-  --gold: #d2a75e;
-  --seal: #b5442f;
-  --soil: #1a1108;
-  --line: rgba(242, 232, 208, 0.18);
-  --line-soft: rgba(242, 232, 208, 0.09);
   --serif: "Songti SC", "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
   --sans: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
 }

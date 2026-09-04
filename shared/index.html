@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>馆藏库房 · 界面收藏馆</title>
+<meta name="description" content="界面收藏馆的公开库房：总台与展品共用的零依赖原子零件，可查看、可下载、可拷贝。">
+<meta name="theme-color" content="#291f12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='10' fill='%23b5442f'/%3E%3Ctext x='32' y='45' font-size='34' text-anchor='middle' fill='%23f6ecdb' font-family='serif'%3E%E5%BA%93%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="earth-tokens/tokens.css">
+<link rel="stylesheet" href="atelier.css">
+</head>
+<body>
+<main>
+
+  <a class="back" href="../">← 返回总台</a>
+  <div class="brand">
+    <span class="seal" aria-hidden="true">库</span>
+    <div>
+      <h1>馆藏库房</h1>
+      <p class="sub">ATELIER · 总台与展品共用的原子零件</p>
+    </div>
+  </div>
+
+  <p class="intro">
+    这里陈列 <code>shared/</code> 中的全部原子：跨展品复用的零依赖零件，随仓库开放——
+    可查看、可下载、可整箱拷贝去自己的项目。馆内在用的原子会随总台一同演进；
+    领用方式写在每件原子的标签上。
+  </p>
+
+  <section id="atomList" aria-label="原子清单"></section>
+
+  <footer class="foot">
+    界面收藏馆 · 馆藏库房 · 零构建纯静态<br>
+    新原子入库约定见 <a href="https://github.com/Alidadei/ui-museum#readme" target="_blank" rel="noopener">仓库 README</a> 与本目录 README.md
+  </footer>
+
+</main>
+
+<script src="atoms.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var list = document.getElementById("atomList");
+
+  /* ── 渲染原子卡片 ─────────────────────────────── */
+  ATOMS.forEach(function (a) {
+    var card = document.createElement("article");
+    card.className = "atom";
+    card.id = "atom-" + a.id;
+
+    var head = document.createElement("div");
+    head.className = "atom-head";
+    var no = document.createElement("span");
+    no.className = "atom-no";
+    no.textContent = a.no;
+    var name = document.createElement("h2");
+    name.className = "atom-name";
+    name.textContent = a.name;
+    var badge = document.createElement("span");
+    badge.className = "badge " + a.status;
+    badge.textContent = a.status === "in-use" ? "馆内在用" : "待领用";
+    head.append(no, name, badge);
+
+    var desc = document.createElement("p");
+    desc.className = "atom-desc";
+    desc.textContent = a.desc;
+
+    var usage = document.createElement("div");
+    usage.className = "atom-usage";
+    usage.textContent = a.usage;
+
+    card.append(head, desc, usage);
+
+    var links = document.createElement("div");
+    links.className = "atom-links";
+    (a.files || []).forEach(function (f) {
+      var href = a.id + "/" + f;
+      var view = document.createElement("a");
+      view.href = href;
+      view.textContent = "查看 " + f;
+      var dl = document.createElement("a");
+      dl.href = href;
+      dl.setAttribute("download", f);
+      dl.textContent = "下载 " + f;
+      links.append(view, dl);
+    });
+    card.appendChild(links);
+
+    var demo = document.createElement("div");
+    demo.className = "demo";
+    demo.id = "demo-" + a.id;
+    var demoTitle = document.createElement("p");
+    demoTitle.className = "demo-title";
+    demoTitle.textContent = "现场演示 · LIVE";
+    demo.appendChild(demoTitle);
+    card.appendChild(demo);
+
+    list.appendChild(card);
+  });
+
+  /* ── 现场演示 ─────────────────────────────────── */
+
+  /* 原001 · 色票 */
+  (function () {
+    var box = document.getElementById("demo-earth-tokens");
+    if (!box) return;
+    var swatches = document.createElement("div");
+    swatches.className = "swatches";
+    [
+      ["--bg", "底色"], ["--bg-soft", "底色·亮"], ["--ink", "文字"], ["--ink-dim", "文字·次"],
+      ["--ink-faint", "文字·弱"], ["--gold", "赭金"], ["--seal", "印章红"], ["--soil", "土黑"],
+    ].forEach(function (pair) {
+      var s = document.createElement("div");
+      s.className = "swatch";
+      var chip = document.createElement("div");
+      chip.className = "chip";
+      chip.style.background = "var(" + pair[0] + ")";
+      var cap = document.createElement("div");
+      cap.className = "cap";
+      cap.textContent = pair[1] + " " + pair[0];
+      s.append(chip, cap);
+      swatches.appendChild(s);
+    });
+    box.appendChild(swatches);
+  })();
+
+  /* 原002 · 步入过渡 */
+  (function () {
+    var box = document.getElementById("demo-flip-step");
+    if (!box) return;
+    var stage = document.createElement("div");
+    stage.className = "flip-stage";
+    var slotA = document.createElement("div");
+    slotA.className = "flip-slot flip-slot-a";
+    slotA.textContent = "A 位";
+    var slotB = document.createElement("div");
+    slotB.className = "flip-slot flip-slot-b";
+    slotB.textContent = "B 位 · 变大变高";
+    var tile = document.createElement("div");
+    tile.className = "flip-tile";
+    tile.textContent = "壹";
+    stage.append(slotA, slotB, tile);
+
+    var btns = document.createElement("div");
+    btns.className = "flip-btns";
+    function flyTo(slotEl, w, h) {
+      var first = tile.getBoundingClientRect();
+      var sRect = stage.getBoundingClientRect();
+      var tRect = slotEl.getBoundingClientRect();
+      tile.style.left = tRect.left - sRect.left + "px";
+      tile.style.top = tRect.top - sRect.top + "px";
+      tile.style.width = (w || tRect.width) + "px";
+      tile.style.height = (h || tRect.height) + "px";
+      window.flipFit(tile, first, tRect, { duration: 680 });
+    }
+    [["飞去 B 位", function () { flyTo(slotB); }],
+     ["飞回 A 位", function () { flyTo(slotA, 96, 96); }]].forEach(function (pair) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = pair[0];
+      b.addEventListener("click", pair[1]);
+      btns.appendChild(b);
+    });
+    box.append(stage, btns);
+  })();
+})();
+</script>
+</body>
+</html>
