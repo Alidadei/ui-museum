@@ -34,6 +34,8 @@
     mode: "hall",   // hall 总台 | stage 观展
     port: null,     // 当前展品的 iframe 外壳
     busy: false,    // 飞行动画进行中
+    hotLayer: null, // 高光解剖图层（fixed，与相框同步落位）
+    tour: null,     // 特展巡游态 { ex, phase, idx }
   };
 
   const topbarH = () => (window.innerWidth < 640 ? 46 : 52);
@@ -81,6 +83,51 @@
     state.port.querySelector("iframe").src = "about:blank";
     state.port.remove();
     state.port = null;
+    if (state.hotLayer) {
+      state.hotLayer.remove();
+      state.hotLayer = null;
+    }
+  }
+
+  /* 高光解剖：缩览上的「细看这里」热区（fixed 图层，与相框同步落位，
+     必须浮在展品 iframe 之上才能点到） */
+  function renderHighlights(ex) {
+    if (state.hotLayer) {
+      state.hotLayer.remove();
+      state.hotLayer = null;
+    }
+    if (!ex.highlights || !ex.highlights.length) return;
+    const layer = document.createElement("div");
+    layer.className = "hotspots";
+    layer.setAttribute("aria-label", "高光解剖");
+    ex.highlights.forEach((h) => {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "hotspot";
+      dot.style.left = h.x + "%";
+      dot.style.top = h.y + "%";
+      dot.setAttribute("aria-label", h.title);
+      if (h.y < 18) dot.classList.add("below");
+      if (h.x > 78) dot.classList.add("tip-right");
+      if (h.x < 22) dot.classList.add("tip-left");
+      const tip = document.createElement("span");
+      tip.className = "hotspot-tip";
+      const b = document.createElement("b");
+      b.textContent = h.title;
+      const i = document.createElement("i");
+      i.textContent = h.text;
+      tip.append(b, i);
+      dot.appendChild(tip);
+      dot.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const wasOpen = dot.classList.contains("open");
+        layer.querySelectorAll(".hotspot.open").forEach((d) => d.classList.remove("open"));
+        if (!wasOpen) dot.classList.add("open");
+      });
+      layer.appendChild(dot);
+    });
+    body.appendChild(layer);
+    state.hotLayer = layer;
   }
 
   function createPort(ex) {
@@ -129,6 +176,13 @@
     ifr.style.width = VIRTUAL_W + "px";
     ifr.style.height = VIRTUAL_W / ex.aspect + "px";
     ifr.style.transform = `scale(${r.width / VIRTUAL_W})`;
+    if (state.hotLayer) {
+      const h = state.hotLayer.style;
+      h.left = r.left + "px";
+      h.top = r.top + "px";
+      h.width = r.width + "px";
+      h.height = r.height + "px";
+    }
     void state.port.offsetWidth;
   }
 
@@ -254,6 +308,7 @@
     tbTitle.textContent = `№ ${ex.no} · ${ex.title}`;
     ghostNo.textContent = ex.cn || `№${ex.no}`;
     markIndex();
+    renderHighlights(ex);
     layoutHall();
     createPort(ex);
   }

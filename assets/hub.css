@@ -215,6 +215,49 @@ body.in-stage .hall-head, body.in-stage .hall-side, body.in-stage .hall-foot {
   opacity: 0; pointer-events: none;
 }
 
+/* ── 高光解剖：缩览热区 ───────────────────────────── */
+.hotspots { position: fixed; z-index: 45; pointer-events: none; transition: opacity 0.28s ease; }
+body.in-stage .hotspots { opacity: 0; }
+.hotspot {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--gold); background: rgba(26, 17, 8, 0.55);
+  pointer-events: auto; cursor: help; padding: 0;
+}
+.hotspot::after {
+  content: ""; position: absolute; inset: -6px; border-radius: 50%;
+  border: 1px solid var(--gold); opacity: 0.6;
+  animation: hotspot-pulse 2.2s ease-out infinite;
+}
+@keyframes hotspot-pulse {
+  0% { transform: scale(0.6); opacity: 0.7; }
+  70%, 100% { transform: scale(1.7); opacity: 0; }
+}
+.hotspot-tip {
+  position: absolute; bottom: calc(100% + 12px); left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: max-content; max-width: 240px;
+  background: var(--soil); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 14px; text-align: left; letter-spacing: 0.02em;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  box-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.7);
+}
+.hotspot-tip b { display: block; color: var(--gold); font-size: 13px; font-weight: 600; letter-spacing: 0.08em; }
+.hotspot-tip i { display: block; font-style: normal; color: var(--ink-dim); font-size: 12.5px; line-height: 1.8; margin-top: 3px; }
+.hotspot:hover .hotspot-tip,
+.hotspot.open .hotspot-tip,
+.hotspot:focus-visible .hotspot-tip { opacity: 1; visibility: visible; }
+.hotspot.open .hotspot-tip,
+.hotspot:focus-visible .hotspot-tip { transform: translateX(-50%) translateY(0); }
+.hotspot.below .hotspot-tip { bottom: auto; top: calc(100% + 12px); }
+.hotspot.tip-left .hotspot-tip { left: 0; transform: translateX(0) translateY(4px); }
+.hotspot.tip-left.open .hotspot-tip,
+.hotspot.tip-left:focus-visible .hotspot-tip { transform: translateX(0) translateY(0); }
+.hotspot.tip-right .hotspot-tip { left: auto; right: 0; transform: translateX(0) translateY(4px); }
+.hotspot.tip-right.open .hotspot-tip,
+.hotspot.tip-right:focus-visible .hotspot-tip { transform: translateX(0) translateY(0); }
+
 /* ── 移动端 ───────────────────────────────────────── */
 @media (max-width: 880px) {
   .mid { grid-template-columns: 1fr; }

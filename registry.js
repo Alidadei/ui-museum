@@ -23,6 +23,10 @@
  *    live    展签上的「源站 ↗」链接，可省
  *    source  展签上的「源码 ↗」链接，可省
  *    note    策展人注：这件展品美在哪
+ *    highlights  高光解剖：[{ x, y, title, text }]，x/y 为缩览上的
+ *              百分比坐标，点按弹出「细看这里」标注，可省
+ *    versions    版本史：[{ label, year, url, loan }]，loan=true 表示
+ *              借展（如互联网档案馆快照），≥2 条才在馆内展示，可省
  * ============================================================ */
 
 const EXHIBITS = [
@@ -41,5 +45,10 @@ const EXHIBITS = [
     live: "https://alidadei.github.io/",
     source: "https://github.com/Alidadei/alidadei.github.io",
     note: "策展人注——首页是一场三层渐进的开幕：2D 星空即刻到场，浏览器空闲时 3D 星球缓缓升起，最后 SunArc 天空弧光淡入。玻璃质感卡片浮在暖棕米色的宇宙上，中英双语、KaTeX、RSS 一应俱全。技术不喧哗，只负责氛围。",
+    highlights: [
+      { x: 24, y: 9, title: "毛玻璃仪表台", text: "导航浮在星空上，backdrop blur 只让光斑柔和地透出来。" },
+      { x: 50, y: 44, title: "会呼吸的星球", text: "3D 星球等浏览器空闲时才升起——性能与氛围互相成全。" },
+      { x: 38, y: 78, title: "暖棕米的宇宙", text: "玻璃卡片把中文排版泡在暖光里，信息密度再高也不吵。" },
+    ],
   },
 ];
