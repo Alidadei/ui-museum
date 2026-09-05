@@ -107,6 +107,41 @@
     return slice.replace(re, "$1" + parts.map((p) => '"' + p + '"').join(", ") + "$2");
   }
 
+  /* 新增收录：按既有字段顺序构造一个条目文本块（JSON.stringify 保证字符串安全） */
+  function buildEntry(v) {
+    const lines = ["  {"];
+    lines.push('    id: ' + JSON.stringify(v.id) + ',');
+    if (v.zone) lines.push('    zone: ' + JSON.stringify(v.zone) + ',');
+    lines.push('    no: ' + JSON.stringify(v.no) + ',');
+    if (v.cn) lines.push('    cn: ' + JSON.stringify(v.cn) + ',');
+    lines.push('    title: ' + JSON.stringify(v.title) + ',');
+    if (v.titleEn) lines.push('    titleEn: ' + JSON.stringify(v.titleEn) + ',');
+    lines.push('    year: ' + JSON.stringify(v.year || "") + ',');
+    lines.push('    origin: ' + JSON.stringify(v.origin || "收录") + ',');
+    lines.push('    medium: [],');
+    lines.push('    aspect: 16 / 10,');
+    lines.push('    url: ' + JSON.stringify(v.url) + ',');
+    lines.push('    path: null,');
+    if (v.embedFalse) lines.push('    embed: false,');
+    lines.push('    live: ' + JSON.stringify(v.live || v.url) + ',');
+    lines.push('    note: ' + JSON.stringify(v.note || "策展人注——待补充。") + ',');
+    lines.push('  }');
+    return lines.join("\n");
+  }
+
+  /* 把条目文本块插入 EXHIBITS 数组尾部（越过最后一项的尾逗号），
+   * 返回 { at, text }：at 是插入点在原文中的偏移，text 为插入后全文 */
+  function insertIntoArray(text, doc, block) {
+    if (!doc.entries.length) {
+      const at = doc.arrStart + 1;
+      return { at, text: text.slice(0, at) + "\n  " + block + "\n" + text.slice(at) };
+    }
+    const last = doc.entries[doc.entries.length - 1];
+    let at = last.end;
+    if (text[at] === ",") at += 1;
+    return { at, text: text.slice(0, at) + "\n  " + block + text.slice(at) };
+  }
+
   /* 把若干 {start, end, text} 替换块从后往前拼回全文（偏移互不重叠） */
   function applyEdits(text, edits) {
     const sorted = edits.slice().sort((a, b) => b.start - a.start);
@@ -115,7 +150,7 @@
     return out;
   }
 
-  const api = { parse, entryId, getField, setField, getArrayField, setArrayField, applyEdits, sanitize };
+  const api = { parse, entryId, getField, setField, getArrayField, setArrayField, buildEntry, insertIntoArray, applyEdits, sanitize };
 
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else global.RegistryDoc = api;

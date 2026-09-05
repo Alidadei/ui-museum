@@ -81,6 +81,28 @@
     <p class="note-hint">创建路径：GitHub → Settings → Developer settings → Fine-grained tokens → 仅选 ui-museum 仓库 → Permissions 里给 Contents 读写。令牌保存在浏览器 localStorage，不上传到任何第三方。</p>
   </div>
 
+  <div class="panel">
+    <h2>新增收录 · QUICK ADD</h2>
+    <div class="row">
+      <input type="text" id="na-url" placeholder="https://要收录的网站/" style="flex:1; min-width:260px">
+      <input type="text" id="na-title" placeholder="展签名称（留空自动取域名）" style="flex:1; min-width:220px">
+      <select id="na-zone" style="background:var(--soil);color:var(--ink);border:1px solid var(--line-soft);border-radius:8px;padding:9px 12px;font:inherit">
+        <option value="collect">收入收录区</option>
+        <option value="create">放入创作区</option>
+      </select>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="na-embed"> 该站禁止被嵌，按「馆外展品」展出
+      </label>
+      <span id="na-preview" style="font-size:12px;color:var(--ink-faint)"></span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="na-go" type="button" class="primary">收录 ✓（自动编号 · 直接发布）</button>
+    </div>
+    <p class="note-hint">编号、印章字、直链 id 全部自动生成。收录后到上方编辑器补「策展人注」再发布一次即可。发布同样需要令牌。</p>
+  </div>
+
   <div class="layout">
     <div class="panel" style="margin-top:0">
       <h2>展品清单</h2>
@@ -138,6 +160,29 @@
   let currentId = null;
   const edits = {};        // { "id:field": value }
   let currentSha = null;
+  let pendingInsert = null; // 待发布的新增条目 { at, block }
+
+  const CN = ["壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖", "拾", "拾壹", "拾贰"];
+
+  function genId(url) {
+    let host = url;
+    try { host = new URL(url).hostname; } catch (_) {}
+    let base = host.replace(/^www\./, "").split(".")
+      .filter((p) => !["com", "net", "org", "io", "me", "ca", "cn", "dev", "app"].includes(p))
+      .join("-") || host;
+    base = base.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") || "site";
+    let id = base, k = 2;
+    while (EXHIBITS.some((x) => x.id === id)) id = base + "-" + (k++);
+    return id;
+  }
+  function nextNo() {
+    const mx = Math.max(0, ...EXHIBITS.map((x) => parseInt(x.no, 10) || 0));
+    return String(mx + 1).padStart(3, "0");
+  }
+  function nextCn() {
+    const used = new Set(EXHIBITS.map((x) => x.cn));
+    return CN.find((c) => !used.has(c)) || "展";
+  }
 
   const setStatus = (msg, cls) => { statusEl.textContent = msg; statusEl.className = "status" + (cls ? " " + cls : ""); };
   const getToken = () => localStorage.getItem(TOKEN_KEY) || "";
@@ -272,16 +317,19 @@
     URL.revokeObjectURL(a.href);
   });
 
-  $("publish").addEventListener("click", async () => {
-    const token = getToken();
-    if (!token) { setStatus("请先保存发布令牌。", "err"); return; }
-    const editsList = allEdits();
-    if (!editsList.length) { setStatus("没有需要发布的修改。", "err"); return; }
-    const newText = RegistryDoc.applyEdits(originalText, editsList);
-    try { new Function(newText + "; return EXHIBITS.length;"); }
-    catch (e) { setStatus("改写结果语法异常，已阻止发布：" + e.message, "err"); return; }
+  $("publish").addEventListener("click", () => publishAll("正在发布…"));
 
-    setStatus("正在发布…");
+  async function publishAll(prefix) {
+    const token = getToken();
+    if (!token) { setStatus("请先保存发布令牌。", "err"); return false; }
+    const ops = allEdits();
+    if (pendingInsert) ops.push(pendingInsert);
+    if (!ops.length) { setStatus("没有需要发布的修改。", "err"); return false; }
+    const newText = RegistryDoc.applyEdits(originalText, ops);
+    try { new Function(newText + "; return EXHIBITS.length;"); }
+    catch (e) { setStatus("改写结果语法异常，已阻止发布：" + e.message, "err"); return false; }
+
+    setStatus(prefix);
     try {
       const meta = await fetch("https://api.github.com/repos/" + REPO + "/contents/" + PATH + "?ref=main", {
         headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" },
@@ -293,7 +341,7 @@
         method: "PUT",
         headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" },
         body: JSON.stringify({
-          message: "策展后台: 更新展品介绍",
+          message: pendingInsert ? "策展后台: 新增收录 + 更新展品介绍" : "策展后台: 更新展品介绍",
           content: btoa(unescape(encodeURIComponent(newText))),
           sha: currentSha,
           branch: "main",
@@ -304,14 +352,58 @@
         throw new Error("提交失败（" + put.status + "）：" + (err.message || "未知错误"));
       }
       const commit = (await put.json()).commit;
-      setStatus("已提交 ✓（" + commit.sha.slice(0, 7) + "）GitHub Pages 约 1 分钟后自动上线，届时点「刷新」可载入最新内容。\n本次修改了：" + Object.keys(edits).map((k) => k.replace(":", " 的 ")).join("；"), "ok");
+      const opsCount = ops.length;
+      pendingInsert = null;
       originalText = newText;
       doc = RegistryDoc.parse(originalText);
       Object.keys(edits).forEach((k) => delete edits[k]);
       markDirty();
+      setStatus("已提交 ✓（" + commit.sha.slice(0, 7) + "）GitHub Pages 约 1 分钟后自动上线，页面即将刷新载入最新清单。本次共 " + opsCount + " 处改动。", "ok");
+      setTimeout(() => location.reload(), 2200);
+      return true;
     } catch (e) {
       setStatus("✗ " + e.message, "err");
+      return false;
     }
+  }
+
+  /* ── 新增收录 ── */
+  function naPreview() {
+    const raw = $("na-url").value.trim();
+    const p = $("na-preview");
+    if (!raw) { p.textContent = ""; return; }
+    const url = /^https?:\/\//.test(raw) ? raw : "https://" + raw;
+    p.textContent = "将登记为 №" + nextNo() + " · id \"" + genId(url) + "\" · 印章字 " + nextCn() +
+      " · " + ($("na-zone").value === "create" ? "创作区" : "收录区");
+  }
+  $("na-url").addEventListener("input", naPreview);
+  $("na-zone").addEventListener("change", naPreview);
+
+  $("na-go").addEventListener("click", async () => {
+    const raw = $("na-url").value.trim();
+    if (!raw) { setStatus("请先填源站 URL。", "err"); return; }
+    if (pendingInsert) { setStatus("已有一条待发布的新收录，请先点「发布到 GitHub」。", "err"); return; }
+    const url = /^https?:\/\//.test(raw) ? raw : "https://" + raw;
+    let linkHost = url;
+    try { linkHost = new URL(url).hostname.replace(/^www\./, ""); } catch (_) {}
+    const block = RegistryDoc.buildEntry({
+      id: genId(url),
+      zone: $("na-zone").value,
+      no: nextNo(),
+      cn: nextCn(),
+      title: $("na-title").value.trim() || linkHost,
+      year: String(new Date().getFullYear()),
+      origin: $("na-zone").value === "create" ? "个人创造" : "收录",
+      url,
+      note: $("na-note").value.trim() || "策展人注——待补充。",
+      embedFalse: $("na-embed").checked,
+    });
+    const ins = RegistryDoc.insertIntoArray(originalText, doc, block);
+    try { new Function(ins.text + "; return EXHIBITS.length;"); }
+    catch (e) { setStatus("生成的条目语法异常，已阻止：" + e.message, "err"); return; }
+    pendingInsert = { at: ins.at, end: ins.at, text: "\n  " + block };
+    const done = await publishAll("正在收录并发布…");
+    if (!done && pendingInsert) setStatus((statusEl.textContent || "") + "\n新增条目已就绪：配置发布令牌后，点「收录 ✓」或「发布到 GitHub」均可。", "err");
   });
 
   // ── 启动 ──

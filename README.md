@@ -24,6 +24,7 @@
 2. 创建一个 Fine-grained PAT：GitHub → Settings → Developer settings → 仅选 ui-museum 仓库 → Permissions 给 **Contents: Read and write**；
 3. 令牌粘贴进后台（只存你浏览器的 localStorage），选展品 → 改字段 → 「发布到 GitHub」；
 4. 约 1 分钟后 Pages 自动重建，全网生效。不想配令牌也能改和下载 `registry.js`，手动提交同样有效。
+5. **收录新网站**：后台顶部「新增收录」填个 URL 点「收录 ✓」——编号、印章字、直链 id 自动生成并直接发布（默认收入收录区；被嵌就勾「馆外展出」）。收录后记得回编辑器补一句策展人注再发布。
 
 ## 展陈方式
 

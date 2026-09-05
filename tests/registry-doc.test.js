@@ -48,5 +48,21 @@ try {
   check("数组改写后可执行且值正确", g() === "米色纸面|手绘插图|生长状态标注");
 } catch (e) { check("数组改写后可执行: " + e.message, false); }
 
+// 8) 新增收录：构造条目 → 插入数组尾部 → 全文仍合法且数据正确
+const block = RegistryDoc.buildEntry({
+  id: "example-site", zone: "collect", no: "007", cn: "柒",
+  title: "示例站", year: "2026", origin: "收录", url: "https://example.com/",
+  note: "测试条目。", embedFalse: true,
+});
+check("buildEntry 生成含 embed:false 的条目", block.includes('id: "example-site"') && block.includes("embed: false"));
+const ins = RegistryDoc.insertIntoArray(text, doc, block);
+check("插入点越过最后一项的尾逗号", ins.text.includes('"note: 不存在的字段",\n  "x"') === false);
+try {
+  const r = new Function(ins.text + "; return { n: EXHIBITS.length, last: EXHIBITS[EXHIBITS.length - 1] };")();
+  check("插入后总数 7", r.n === 7);
+  check("新条目字段正确", r.last.id === "example-site" && r.last.no === "007" && r.last.url === "https://example.com/" && r.last.embed === false);
+  check("新条目位于既有条目之后", ins.text.indexOf("example-site") > ins.text.indexOf("harry-homepage"));
+} catch (e) { check("插入后全文可执行: " + e.message, false); }
+
 console.log(ok ? "── 全部通过 ──" : "── 存在失败 ──");
 process.exit(ok ? 0 : 1);
