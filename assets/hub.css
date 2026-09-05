@@ -208,6 +208,17 @@ body.in-stage .hall-head, body.in-stage .hall-side, body.in-stage .hall-foot {
   opacity: 0; pointer-events: none;
 }
 
+/* 馆外展品的馆牌封面 */
+.port.cover { display: grid; place-items: center; align-content: center; gap: 10px; text-align: center; padding: 24px; cursor: pointer; }
+.port.cover .c-name { font-family: var(--serif); font-size: clamp(20px, 2.4vw, 30px); letter-spacing: 0.08em; }
+.port.cover .c-tag { color: var(--ink-faint); font-size: 11px; letter-spacing: 0.34em; }
+.port.cover .c-open {
+  margin-top: 10px; color: var(--gold); font-size: 13px; letter-spacing: 0.15em;
+  border: 1px solid var(--line); border-radius: 999px; padding: 8px 20px;
+  transition: background 0.25s, color 0.25s;
+}
+.port.cover:hover .c-open { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+
 /* ── 巡礼印章 ─────────────────────────────────────── */
 .stamp-grid { display: flex; flex-wrap: wrap; gap: 10px; }
 .stamp {

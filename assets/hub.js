@@ -82,7 +82,8 @@
 
   function destroyPort() {
     if (!state.port) return;
-    state.port.querySelector("iframe").src = "about:blank";
+    const ifr = state.port.querySelector("iframe");
+    if (ifr) ifr.src = "about:blank"; // 馆外封面 port 没有 iframe
     state.port.remove();
     state.port = null;
     if (state.hotLayer) {
@@ -136,6 +137,25 @@
     const port = document.createElement("div");
     port.className = "port";
     port.addEventListener("click", () => { if (state.mode === "hall") enterStage(); });
+    if (ex.embed === false) {
+      // 馆外展品：原站禁止被嵌（X-Frame-Options 等），总台上摆馆牌封面
+      port.classList.add("cover", "loaded");
+      const name = document.createElement("div");
+      name.className = "c-name";
+      name.textContent = ex.title;
+      const tag = document.createElement("div");
+      tag.className = "c-tag";
+      tag.textContent = "馆外展品 · OFFSITE";
+      const open = document.createElement("div");
+      open.className = "c-open";
+      open.textContent = "打开源站 ↗";
+      port.append(name, tag, open);
+      port.setAttribute("title", "在新窗口打开源站");
+      body.appendChild(port);
+      state.port = port;
+      syncPort();
+      return;
+    }
     const ifr = document.createElement("iframe");
     ifr.className = "port-iframe";
     ifr.title = ex.title;
@@ -240,6 +260,13 @@
 
   function enterStage() {
     if (state.busy || state.mode !== "hall" || !state.port) return;
+    const ex = cur();
+    if (ex && ex.embed === false) {
+      // 馆外展品：不进放映厅，新窗口直达源站
+      window.open(ex.url || ex.live || "#/", "_blank", "noopener");
+      stampCurrent();
+      return;
+    }
     state.busy = true;
     syncPort();
     const first = state.port.getBoundingClientRect();
@@ -266,9 +293,12 @@
     if (!state.tour && location.hash !== "#/") location.hash = "#/";
     if (state.altSrc && state.port) {
       const ex = cur();
-      frame.dataset.loaded = "false";
-      state.port.classList.remove("loaded");
-      state.port.querySelector("iframe").src = ex.path || ex.url;
+      const ifr = state.port.querySelector("iframe");
+      if (ifr) {
+        frame.dataset.loaded = "false";
+        state.port.classList.remove("loaded");
+        ifr.src = ex.path || ex.url;
+      }
       state.altSrc = null;
     }
     layoutHall();
@@ -516,6 +546,16 @@
     if (t.phase === "preface") {
       addTourBtn("开展 →", () => tourGotoItem(0), true);
       addTourBtn("先不看了", exitTour);
+    } else if (t.phase === "offsite") {
+      tourText.textContent = "这件展品住在馆外——原站不进馆内放映厅。打开源站慢慢看，或沿展线继续走。";
+      addTourBtn("打开源站 ↗", () => {
+        const ex = state.list[findIdx(t.ex.items[t.idx])] || {};
+        window.open(ex.url || ex.live || "#/", "_blank", "noopener");
+        stampCurrent();
+      }, true);
+      if (t.idx < t.ex.items.length - 1) addTourBtn("下一件 →", () => tourStep(1));
+      else addTourBtn("闭幕 →", () => tourClosing());
+      addTourBtn("先不看了", exitTour);
     } else {
       addTourBtn("回到总台", exitTour, true);
     }
@@ -531,9 +571,15 @@
     const needSelect = target !== state.current;
     const doEnter = () => {
       if (!state.tour) return;
+      const offsite = state.list[target] && state.list[target].embed === false;
       if (needSelect) swapTo(target);
       setTimeout(() => {
         if (!state.tour) return;
+        if (offsite) {
+          state.tour.phase = "offsite";
+          showTourPhase();
+          return;
+        }
         if (state.mode !== "stage") enterStage();
         showTourPhase();  // item 相位：收起前言幕布
         toast(`特展 · ${t.idx + 1}/${t.ex.items.length}`);
