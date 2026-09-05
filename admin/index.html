@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>策展后台 · 界面收藏馆</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#291f12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='10' fill='%23b5442f'/%3E%3Ctext x='32' y='45' font-size='34' text-anchor='middle' fill='%23f6ecdb' font-family='serif'%3E%E7%AD%96%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../shared/earth-tokens/tokens.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 14.5px; line-height: 1.8; min-height: 100vh; padding: 34px 40px 60px;
+  }
+  main { max-width: 1020px; margin: 0 auto; }
+  a { color: var(--gold); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 10px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: 0.06em; }
+  h1 small { color: var(--ink-faint); font-size: 12px; letter-spacing: 0.2em; margin-left: 10px; }
+  .panel {
+    border: 1px solid var(--line-soft); border-radius: 12px;
+    background: rgba(242, 232, 208, 0.03); padding: 18px 22px; margin-top: 20px;
+  }
+  .panel h2 { font-size: 13px; letter-spacing: 0.2em; color: var(--gold); font-weight: 600; margin-bottom: 12px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  input[type="text"], input[type="password"], textarea {
+    width: 100%; background: var(--soil); color: var(--ink);
+    border: 1px solid var(--line-soft); border-radius: 8px;
+    padding: 9px 12px; font: inherit; outline: none;
+  }
+  input:focus, textarea:focus { border-color: var(--gold); }
+  textarea { resize: vertical; line-height: 1.9; }
+  input[type="password"] { max-width: 420px; font-family: ui-monospace, Consolas, monospace; }
+  label { display: block; font-size: 12px; color: var(--ink-dim); letter-spacing: 0.14em; margin: 12px 0 5px; }
+  button {
+    font: inherit; font-size: 13px; letter-spacing: 0.08em;
+    background: none; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 16px; cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  button:hover { border-color: var(--gold); }
+  button.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  button.primary:hover { background: var(--gold); border-color: var(--gold); }
+  button.danger { color: var(--seal); border-color: var(--seal); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; margin-top: 20px; align-items: start; }
+  .exlist { display: flex; flex-direction: column; gap: 8px; }
+  .exlist button { text-align: left; padding: 11px 14px; border-radius: 10px; }
+  .exlist button.on { border-color: var(--gold); background: rgba(242, 232, 208, 0.06); }
+  .exlist .no { color: var(--gold); font-size: 11px; margin-right: 8px; letter-spacing: 0.14em; }
+  .exlist .dirty::after { content: " ●"; color: var(--gold); }
+  .exlist .zone { display: block; font-size: 10.5px; color: var(--ink-faint); letter-spacing: 0.16em; margin-top: 2px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+  .meta { color: var(--ink-faint); font-size: 12px; margin-top: 10px; font-family: ui-monospace, Consolas, monospace; }
+  .status { margin-top: 16px; font-size: 13px; color: var(--ink-dim); min-height: 24px; white-space: pre-wrap; }
+  .status.err { color: var(--seal); }
+  .status.ok { color: var(--gold); }
+  .note-hint { font-size: 12px; color: var(--ink-faint); margin-top: 4px; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .grid2 { grid-template-columns: 1fr; } body { padding: 24px 18px 60px; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <h1>策展后台<small>CURATOR ADMIN</small></h1>
+    <a href="../">← 返回总台</a>
+  </div>
+
+  <div class="panel">
+    <h2>第一步 · 发布令牌（只存本浏览器）</h2>
+    <div class="row">
+      <input type="password" id="token" placeholder="GitHub Fine-grained PAT（Contents: Read and write，仅限 ui-museum）">
+      <button id="saveToken" type="button">保存令牌</button>
+      <button id="clearToken" type="button">清除</button>
+      <span id="tokenState" style="font-size:12.5px;color:var(--ink-faint)">未配置：可编辑与下载，无法发布</span>
+    </div>
+    <p class="note-hint">创建路径：GitHub → Settings → Developer settings → Fine-grained tokens → 仅选 ui-museum 仓库 → Permissions 里给 Contents 读写。令牌保存在浏览器 localStorage，不上传到任何第三方。</p>
+  </div>
+
+  <div class="layout">
+    <div class="panel" style="margin-top:0">
+      <h2>展品清单</h2>
+      <div class="exlist" id="exlist"></div>
+      <p class="note-hint" style="margin-top:12px">改完记得点下方「发布到 GitHub」，约 1 分钟后全网生效。</p>
+    </div>
+
+    <div class="panel" style="margin-top:0">
+      <h2 id="editTitle">选择一件展品</h2>
+      <div class="grid2">
+        <div><label>展签名称 title</label><input type="text" id="f-title"></div>
+        <div><label>年份 year</label><input type="text" id="f-year"></div>
+      </div>
+      <label>来源 origin</label><input type="text" id="f-origin">
+      <label>材质 medium（用 / 分隔）</label><input type="text" id="f-medium">
+      <label>策展人注 note</label>
+      <textarea id="f-note" rows="6"></textarea>
+      <p class="note-hint">不支持英文双引号与反斜杠（保存时会自动替换）；换行会折叠成空格。</p>
+      <div class="grid2">
+        <div><label>源站 live</label><input type="text" id="f-live"></div>
+        <div><label>源码 source</label><input type="text" id="f-source"></div>
+      </div>
+      <div class="meta" id="f-meta"></div>
+      <div class="row" style="margin-top:16px">
+        <button id="revert" type="button">撤销本展品修改</button>
+        <button id="download" type="button">下载修改后的 registry.js</button>
+        <button id="publish" type="button" class="primary">发布到 GitHub</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+</main>
+
+<script src="admin-core.js"></script>
+<script src="../registry.js"></script>
+<script>
+(function () {
+  "use strict";
+  const TOKEN_KEY = "museum-admin-token";
+  const REPO = "Alidadei/ui-museum";
+  const PATH = "registry.js";
+  const FIELDS = ["title", "year", "origin", "medium", "note", "live", "source"];
+  // medium 是数组字段（["a","b"] → "a / b"），单独走读写通道
+  const getFieldOn = (slice, f) => f === "medium"
+    ? RegistryDoc.getArrayField(slice, f)
+    : RegistryDoc.getField(slice, f);
+  const setFieldOn = (slice, f, v) => f === "medium"
+    ? RegistryDoc.setArrayField(slice, f, v)
+    : RegistryDoc.setField(slice, f, v);
+
+  const $ = (id) => document.getElementById(id);
+  const statusEl = $("status");
+  let doc = null;          // RegistryDoc.parse 的结果（基于仓库原文件）
+  let originalText = "";   // 拉取到的 registry.js 原文
+  let currentId = null;
+  const edits = {};        // { "id:field": value }
+  let currentSha = null;
+
+  const setStatus = (msg, cls) => { statusEl.textContent = msg; statusEl.className = "status" + (cls ? " " + cls : ""); };
+  const getToken = () => localStorage.getItem(TOKEN_KEY) || "";
+
+  function refreshTokenState(msg) {
+    const t = getToken();
+    $("token").value = t;
+    $("tokenState").textContent = msg || (t ? "已保存令牌（长度 " + t.length + "）" : "未配置：可编辑与下载，无法发布");
+    $("publish").disabled = !t;
+  }
+
+  function allEdits() {
+    // 合并同一展品的多字段修改
+    const byId = {};
+    Object.keys(edits).forEach((k) => {
+      const [id, field] = k.split(":");
+      (byId[id] = byId[id] || {})[field] = edits[k];
+    });
+    const list = [];
+    doc.entries.forEach((e) => {
+      const id = RegistryDoc.entryId(e.slice);
+      if (!byId[id]) return;
+      let slice = e.slice;
+      Object.keys(byId[id]).forEach((f) => { slice = setFieldOn(slice, f, byId[id][f]); });
+      list.push({ start: e.start, end: e.end, text: slice });
+    });
+    return list;
+  }
+
+  function applyEditsToForm(id) {
+    const e = doc.entries.find((e) => RegistryDoc.entryId(e.slice) === id);
+    if (!e) return;
+    let slice = e.slice;
+    FIELDS.forEach((f) => {
+      const k = id + ":" + f;
+      if (edits[k] !== undefined) slice = RegistryDoc.setField(slice, f, edits[k]);
+    });
+    $("editTitle").textContent = "编辑 · " + id;
+    FIELDS.forEach((f) => {
+      const v = getFieldOn(slice, f);
+      if (f === "note") $("f-note").value = v || "";
+      else $("f-" + f).value = v || "";
+    });
+    const offsite = /embed:\s*false/.test(slice);
+    $("f-meta").textContent = "只读信息 · " +
+      "编号 " + (RegistryDoc.getField(slice, "no") || "?") +
+      " · 分区 " + (RegistryDoc.getField(slice, "zone") || "collect") +
+      " · 展出 " + (offsite ? "馆外（新窗口）" : (RegistryDoc.getField(slice, "url") ? "源站嵌入" : "本地 uis/"));
+  }
+
+  function markDirty() {
+    document.querySelectorAll(".exlist button").forEach((b) => {
+      const any = Object.keys(edits).some((k) => k.startsWith(b.dataset.id + ":"));
+      b.classList.toggle("dirty", any);
+    });
+  }
+
+  function selectExhibit(id) {
+    currentId = id;
+    document.querySelectorAll(".exlist button").forEach((b) => b.classList.toggle("on", b.dataset.id === id));
+    applyEditsToForm(id);
+  }
+
+  function buildList() {
+    const box = $("exlist");
+    box.innerHTML = "";
+    EXHIBITS.forEach((ex) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.id = ex.id;
+      const no = document.createElement("span");
+      no.className = "no";
+      no.textContent = "№" + ex.no;
+      b.appendChild(no);
+      b.appendChild(document.createTextNode(ex.title));
+      const z = document.createElement("span");
+      z.className = "zone";
+      z.textContent = (ex.zone === "create" ? "创作区" : "收录区") + " · " + (ex.embed === false ? "馆外展出" : (ex.path ? "本地 uis/" : "源站嵌入"));
+      b.appendChild(z);
+      b.addEventListener("click", () => selectExhibit(ex.id));
+      box.appendChild(b);
+    });
+  }
+
+  async function loadRegistry() {
+    setStatus("正在载入 registry.js …");
+    const res = await fetch("../registry.js", { cache: "no-store" });
+    originalText = await res.text();
+    doc = RegistryDoc.parse(originalText);
+    buildList();
+    selectExhibit(EXHIBITS[0].id);
+    setStatus("已载入 " + EXHIBITS.length + " 件展品。开始编辑吧——所有修改先在本地，点「发布到 GitHub」才会上线。", "ok");
+  }
+
+  FIELDS.forEach((f) => {
+    $("f-" + f).addEventListener("input", () => {
+      if (!currentId) return;
+      const original = getFieldOn(
+        doc.entries.find((e) => RegistryDoc.entryId(e.slice) === currentId).slice, f);
+      const now = $("f-" + f).value;
+      if (now === original) delete edits[currentId + ":" + f];
+      else edits[currentId + ":" + f] = now;
+      markDirty();
+    });
+  });
+
+  $("saveToken").addEventListener("click", () => {
+    localStorage.setItem(TOKEN_KEY, $("token").value.trim());
+    refreshTokenState("令牌已保存到本浏览器 ✓");
+  });
+  $("clearToken").addEventListener("click", () => {
+    localStorage.removeItem(TOKEN_KEY);
+    $("token").value = "";
+    refreshTokenState("已清除");
+  });
+
+  $("revert").addEventListener("click", () => {
+    if (!currentId) return;
+    Object.keys(edits).forEach((k) => { if (k.startsWith(currentId + ":")) delete edits[k]; });
+    applyEditsToForm(currentId);
+    markDirty();
+    setStatus("已撤销「" + currentId + "」的本地修改。");
+  });
+
+  $("download").addEventListener("click", () => {
+    const text = RegistryDoc.applyEdits(originalText, allEdits());
+    const blob = new Blob([text], { type: "text/javascript" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "registry.js";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  $("publish").addEventListener("click", async () => {
+    const token = getToken();
+    if (!token) { setStatus("请先保存发布令牌。", "err"); return; }
+    const editsList = allEdits();
+    if (!editsList.length) { setStatus("没有需要发布的修改。", "err"); return; }
+    const newText = RegistryDoc.applyEdits(originalText, editsList);
+    try { new Function(newText + "; return EXHIBITS.length;"); }
+    catch (e) { setStatus("改写结果语法异常，已阻止发布：" + e.message, "err"); return; }
+
+    setStatus("正在发布…");
+    try {
+      const meta = await fetch("https://api.github.com/repos/" + REPO + "/contents/" + PATH + "?ref=main", {
+        headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" },
+      });
+      if (!meta.ok) throw new Error("读取仓库文件失败（" + meta.status + "）：令牌无效或没有 Contents 读权限");
+      currentSha = (await meta.json()).sha;
+
+      const put = await fetch("https://api.github.com/repos/" + REPO + "/contents/" + PATH, {
+        method: "PUT",
+        headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" },
+        body: JSON.stringify({
+          message: "策展后台: 更新展品介绍",
+          content: btoa(unescape(encodeURIComponent(newText))),
+          sha: currentSha,
+          branch: "main",
+        }),
+      });
+      if (!put.ok) {
+        const err = await put.json().catch(() => ({}));
+        throw new Error("提交失败（" + put.status + "）：" + (err.message || "未知错误"));
+      }
+      const commit = (await put.json()).commit;
+      setStatus("已提交 ✓（" + commit.sha.slice(0, 7) + "）GitHub Pages 约 1 分钟后自动上线，届时点「刷新」可载入最新内容。\n本次修改了：" + Object.keys(edits).map((k) => k.replace(":", " 的 ")).join("；"), "ok");
+      originalText = newText;
+      doc = RegistryDoc.parse(originalText);
+      Object.keys(edits).forEach((k) => delete edits[k]);
+      markDirty();
+    } catch (e) {
+      setStatus("✗ " + e.message, "err");
+    }
+  });
+
+  // ── 启动 ──
+  refreshTokenState();
+  loadRegistry().catch((e) => setStatus("载入失败：" + e.message, "err"));
+})();
+</script>
+</body>
+</html>

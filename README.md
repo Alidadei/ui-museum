@@ -15,6 +15,16 @@
 - **版本史专柜**：同一作品的多版本并排，可步入；无法活体展出的以「修复中」凭证陈列（registry 的 `versions` 字段）
 - **库房公开化**：`shared/` 原子在[库房陈列室](shared/)公开展出——编号、说明、用法、现场演示、源码查看/下载，随仓库开放拷贝；馆内代码也优先领用库房原子（如色票、FLIP 过渡）
 
+- **库房公开化**：`shared/` 原子在[库房陈列室](shared/)公开展出——编号、说明、用法、现场演示、源码查看/下载，随仓库开放拷贝；馆内代码也优先领用库房原子（如色票、FLIP 过渡）
+- **策展后台**：[admin/](admin/) 可视化编辑展签名称、策展人注、材质等介绍内容，一键发布（需自己的 GitHub 令牌，只存浏览器）
+
+### 策展后台使用
+
+1. 打开 [admin/](admin/)（线上：`https://alidadei.github.io/ui-museum/admin/`）；
+2. 创建一个 Fine-grained PAT：GitHub → Settings → Developer settings → 仅选 ui-museum 仓库 → Permissions 给 **Contents: Read and write**；
+3. 令牌粘贴进后台（只存你浏览器的 localStorage），选展品 → 改字段 → 「发布到 GitHub」；
+4. 约 1 分钟后 Pages 自动重建，全网生效。不想配令牌也能改和下载 `registry.js`，手动提交同样有效。
+
 ## 展陈方式
 
 - **总台**（`index.html`）：左侧导览 + 馆规，右侧展厅。展品以「活的缩览」挂在相框里
