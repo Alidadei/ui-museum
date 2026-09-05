@@ -29,8 +29,12 @@
 
 <div class="mid">
   <aside class="hall-side">
+    <div class="zone-tabs" id="zoneTabs" role="tablist" aria-label="馆藏分区">
+      <button type="button" data-zone="create" class="on">创作 <span>00</span></button>
+      <button type="button" data-zone="collect">收录 <span>00</span></button>
+    </div>
     <section class="index">
-      <h2 class="side-title">导览 · INDEX</h2>
+      <h2 class="side-title" id="indexTitle">创作 · MY WORKS</h2>
       <ol id="indexList"></ol>
     </section>
     <section class="passport">

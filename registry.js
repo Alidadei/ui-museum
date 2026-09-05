@@ -14,6 +14,7 @@
  *    id      稳定 ID，出现在地址 #/exhibit/<id>
  *    no      馆藏编号（字符串，如 "002"）
  *    cn      展位汉字（展厅背景水印，如 "贰"）
+ *    zone    分区："create" 个人创作 | "collect" 收录他人（两区分开陈列）
  *    title   展签名称；titleEn 英文名
  *    year    年份；origin  来源（个人创造 / 收录）
  *    medium  材质 = 技术栈数组
@@ -34,6 +35,7 @@
 const EXHIBITS = [
   {
     id: "harry-homepage",
+    zone: "create",
     no: "001",
     cn: "壹",
     title: "Harry Yu 的个人网站",
@@ -68,6 +70,7 @@ const EXHIBITS = [
   },
   {
     id: "digital-garden",
+    zone: "collect",
     no: "002",
     cn: "贰",
     title: "Maggie Appleton · 数字花园",
@@ -85,6 +88,7 @@ const EXHIBITS = [
   },
   {
     id: "annual-redesign",
+    zone: "collect",
     no: "003",
     cn: "叁",
     title: "Lynn Fisher · 一年一重设计",
@@ -101,6 +105,7 @@ const EXHIBITS = [
   },
   {
     id: "interactive-magic",
+    zone: "collect",
     no: "004",
     cn: "肆",
     title: "Josh Comeau · 互动魔法",
@@ -117,6 +122,7 @@ const EXHIBITS = [
   },
   {
     id: "peach-toys",
+    zone: "collect",
     no: "005",
     cn: "伍",
     title: "Monica Dinculescu · 玩具桌",
@@ -133,6 +139,7 @@ const EXHIBITS = [
   },
   {
     id: "quiet-paper",
+    zone: "collect",
     no: "006",
     cn: "陆",
     title: "Frank Chimero · 安静的纸面",

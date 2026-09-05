@@ -31,6 +31,7 @@
   const specialShows = typeof EXHIBITIONS !== "undefined" ? EXHIBITIONS : window.EXHIBITIONS || [];
   const state = {
     list,
+    zone: "create", // 分区：create 个人创作 | collect 收录他人
     current: -1,
     mode: "hall",   // hall 总台 | stage 观展
     port: null,     // 当前展品的 iframe 外壳
@@ -53,9 +54,58 @@
     return parts.join('<span class="sep">·</span>');
   }
 
+  /* ── 分区：个人创作与他人收录，分开陈列 ──────────── */
+
+  const indexTitle = $("indexTitle");
+  const zoneTabs = $("zoneTabs");
+  const ZONE_LABEL = { create: "创作 · MY WORKS", collect: "收录 · COLLECTION" };
+
+  function zoneIdx() {
+    const out = [];
+    state.list.forEach((ex, i) => {
+      if ((ex.zone || "collect") === state.zone) out.push(i);
+    });
+    return out;
+  }
+
+  function markZone() {
+    if (!zoneTabs) return;
+    zoneTabs.querySelectorAll("button").forEach((b) => {
+      b.classList.toggle("on", b.dataset.zone === state.zone);
+      const n = state.list.filter((ex) => (ex.zone || "collect") === b.dataset.zone).length;
+      b.querySelector("span").textContent = String(n).padStart(2, "0");
+    });
+    if (indexTitle) indexTitle.textContent = ZONE_LABEL[state.zone] || ZONE_LABEL.collect;
+  }
+
+  function applyZone(z) {
+    if (state.zone === z) return;
+    state.zone = z;
+    buildIndex();
+    buildSpecial();
+    const zi = zoneIdx();
+    if (zi.length && zi.indexOf(state.current) < 0) selectExhibit(zi[0]);
+  }
+
+  if (zoneTabs) {
+    zoneTabs.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-zone]");
+      if (!b || state.tour) return;
+      const z = b.dataset.zone;
+      if (z === state.zone) return;
+      if (state.mode === "stage") {
+        leaveStage();
+        setTimeout(() => applyZone(z), REDUCED ? 30 : DUR + 100);
+      } else {
+        applyZone(z);
+      }
+    });
+  }
+
   function buildIndex() {
     indexList.innerHTML = "";
-    state.list.forEach((ex, i) => {
+    zoneIdx().forEach((i) => {
+      const ex = state.list[i];
       const li = document.createElement("li");
       const b = document.createElement("button");
       b.type = "button";
@@ -70,6 +120,7 @@
     ghost.className = "ghost";
     ghost.textContent = "虚位以待 · RESERVED";
     indexList.appendChild(ghost);
+    markZone();
   }
 
   function markIndex() {
@@ -491,11 +542,17 @@
   function buildSpecial() {
     if (!specialList) return;
     specialList.innerHTML = "";
-    if (!specialShows.length) {
+    // 特展按其首件展品所属分区归口
+    const zTours = specialShows.filter((sp) => {
+      const first = state.list[findIdx(sp.items[0])];
+      return first && (first.zone || "collect") === state.zone;
+    });
+    if (!zTours.length) {
       specialList.closest(".special").hidden = true;
       return;
     }
-    specialShows.forEach((sp) => {
+    specialList.closest(".special").hidden = false;
+    zTours.forEach((sp) => {
       const li = document.createElement("li");
       const b = document.createElement("button");
       b.type = "button";
@@ -649,6 +706,13 @@
     if (id) {
       const i = findIdx(id);
       if (i < 0) { location.hash = "#/"; return; }
+      // 直链自动落到展品所属分区
+      const z = state.list[i].zone || "collect";
+      if (state.zone !== z) {
+        state.zone = z;
+        buildIndex();
+        buildSpecial();
+      }
       if (state.mode === "stage") {
         if (!state.busy && i !== state.current) stageSwapTo(i);
         return;
@@ -674,9 +738,11 @@
       return;
     }
     if (state.mode !== "hall" || state.busy) return;
-    const n = state.list.length;
-    if (e.key === "ArrowRight") goTo((state.current + 1) % n);
-    else if (e.key === "ArrowLeft") goTo((state.current - 1 + n) % n);
+    const zi = zoneIdx();
+    if (!zi.length) return;
+    const pos = zi.indexOf(state.current);
+    if (e.key === "ArrowRight") goTo(zi[(pos + 1) % zi.length]);
+    else if (e.key === "ArrowLeft") goTo(zi[(pos - 1 + zi.length) % zi.length]);
     else if (e.key === "Enter") enterStage();
   });
 
@@ -699,11 +765,12 @@
 
   /* ── 开馆 ──────────────────────────────────────── */
 
+  const want = parseHash();
+  const startIdx = findIdx(want);
+  if (startIdx >= 0 && state.list[startIdx].zone) state.zone = state.list[startIdx].zone;
   buildIndex();
   buildSpecial();
-  const want = parseHash();
-  const start = Math.max(0, findIdx(want));
-  selectExhibit(start);
+  selectExhibit(Math.max(0, startIdx));
   renderPassport();
   const tourWant = parseTourHash();
   if (tourWant && findTourIdx(tourWant) >= 0) enterTour(tourWant);

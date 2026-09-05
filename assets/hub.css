@@ -219,6 +219,22 @@ body.in-stage .hall-head, body.in-stage .hall-side, body.in-stage .hall-foot {
 }
 .port.cover:hover .c-open { background: var(--gold); color: var(--bg); border-color: var(--gold); }
 
+/* ── 分区切换（创作 / 收录） ──────────────────────── */
+.zone-tabs {
+  display: flex; border: 1px solid var(--line); border-radius: 999px;
+  overflow: hidden; margin-bottom: 20px;
+}
+.zone-tabs button {
+  flex: 1; background: none; border: 0; color: var(--ink-dim);
+  font: inherit; font-size: 12.5px; letter-spacing: 0.1em;
+  padding: 9px 0; cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+.zone-tabs button + button { border-left: 1px solid var(--line); }
+.zone-tabs button:hover { color: var(--ink); }
+.zone-tabs button.on { background: var(--ink); color: var(--bg); }
+.zone-tabs button span { opacity: 0.55; font-size: 10px; margin-left: 4px; }
+
 /* ── 巡礼印章 ─────────────────────────────────────── */
 .stamp-grid { display: flex; flex-wrap: wrap; gap: 10px; }
 .stamp {
@@ -355,6 +371,7 @@ body.in-stage .hotspots { opacity: 0; }
     flex-direction: row; flex-wrap: wrap; gap: 26px;
   }
   .hall-side > section { flex: 1 1 260px; }
+  .hall-side .zone-tabs { flex: 1 1 100%; }
   .hall-head { align-items: center; padding: 20px 22px 16px; }
   .head-note { display: none; }
   .title { font-size: 21px; letter-spacing: 0.22em; }
