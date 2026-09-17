@@ -16,14 +16,17 @@ body {
 }
 
 /* 舞台：所有画层收进一个可拖动/缩放的容器。transform 会成为
- * fixed 子层的包含块，几何不变、整体联动；1× 时与视口重合。 */
+ * fixed 子层的包含块，几何不变、整体联动；1× 时与视口重合。
+ * 任意倍率可拖：抓手光标示意，按住变抓紧。 */
 #stage {
   position: fixed;
   inset: 0;
   transform-origin: 0 0;
   touch-action: none;
   will-change: transform;
+  cursor: grab;
 }
+#stage.dragging { cursor: grabbing; }
 
 /* 图：等比 contain 居中，四周黑幕与图内夜空自然融为一体。
  * 用绝对定位 inset:0 + margin:auto 居中——grid/flex 里 max-height:100%

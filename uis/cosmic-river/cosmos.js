@@ -177,8 +177,8 @@
    * 把流场编码成 RGBA 小纹理交给 FlowGL：
    * RG=流向（0.5 基线）、B=运动遮罩（亮处流、暗处与行人驻足）、
    * A=空间相位（各处滑动错峰）。行序顶→底，与着色器 v_uv 一致。 */
-  var FLOW_AMP = 6;     // 最大位移（显示像素）
-  var FLOW_CYCLE = 9;   // 平流回卷周期（秒）
+  var FLOW_AMP = 0;     // 整图平流幅度——用户定版：流线纹理要静止，置 0
+  var FLOW_CYCLE = 9;   //（保留着色器通用性；幅度为 0 时无位移）
   var flowTex = null, flowCtl = null;
   function buildFlowTexture() {
     var n = fw * fh;
@@ -695,7 +695,7 @@
       testEl.textContent =
         "自检 · 图像 " + imgTag +
         " · 流场 " + state.field[0] + "×" + state.field[1] +
-        " · 平流 " + state.flow +
+        " · GL " + state.flow + (FLOW_AMP > 0 ? " · 流线平流" : " · 流线静止") +
         " · 河 " + state.drops + " · 星 " + state.twinkles + "+" + state.ambient +
         " · " + wingTag +
         " · 句#" + (cur ? cur.i : "-") + "/" + state.lineTotal + "「" + (cur ? cur.text : "…") + "」" +
