@@ -10,7 +10,7 @@ const check = (n, c) => { console.log((c ? "✓" : "✗") + " " + n); if (!c) ok
 // 1) 解析：六件展品都被定位
 const doc = RegistryDoc.parse(text);
 const ids = doc.entries.map((e) => RegistryDoc.entryId(e.slice));
-check("解析出 6 件展品: " + ids.join(","), ids.length === 6 && ids[0] === "harry-homepage");
+check("解析出 7 件展品: " + ids.join(","), ids.length === 7 && ids[0] === "harry-homepage");
 
 // 2) 空编辑回写：必须与原文件逐字节一致
 check("空编辑回写逐字节一致", RegistryDoc.applyEdits(text, []) === text);
@@ -50,7 +50,7 @@ try {
 
 // 8) 新增收录：构造条目 → 插入数组尾部 → 全文仍合法且数据正确
 const block = RegistryDoc.buildEntry({
-  id: "example-site", zone: "collect", no: "007", cn: "柒",
+  id: "example-site", zone: "collect", no: "008", cn: "捌",
   title: "示例站", year: "2026", origin: "收录", url: "https://example.com/",
   note: "测试条目。", embedFalse: true,
 });
@@ -59,8 +59,8 @@ const ins = RegistryDoc.insertIntoArray(text, doc, block);
 check("插入点越过最后一项的尾逗号", ins.text.includes('"note: 不存在的字段",\n  "x"') === false);
 try {
   const r = new Function(ins.text + "; return { n: EXHIBITS.length, last: EXHIBITS[EXHIBITS.length - 1] };")();
-  check("插入后总数 7", r.n === 7);
-  check("新条目字段正确", r.last.id === "example-site" && r.last.no === "007" && r.last.url === "https://example.com/" && r.last.embed === false);
+  check("插入后总数 8", r.n === 8);
+  check("新条目字段正确", r.last.id === "example-site" && r.last.no === "008" && r.last.url === "https://example.com/" && r.last.embed === false);
   check("新条目位于既有条目之后", ins.text.indexOf("example-site") > ins.text.indexOf("harry-homepage"));
 } catch (e) { check("插入后全文可执行: " + e.message, false); }
 

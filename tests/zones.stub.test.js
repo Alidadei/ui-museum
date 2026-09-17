@@ -70,7 +70,7 @@ let ok = true;
 const check = (n, c) => { console.log((c?"✓":"✗")+" "+n); if(!c) ok = false; };
 
 check("默认区=创作", els.indexTitle.textContent.includes("创作"));
-check("创作区导览 1 件", idxButtons().length === 1);
+check("创作区导览 2 件", idxButtons().length === 2);
 check("创作区特展=特001", els.specialList.children.length === 1);
 const collectBtn = els.zoneTabs.children[1];
 els.zoneTabs.listeners["click"][0]({ target: { closest: (sel) => sel === "button[data-zone]" ? collectBtn : null } });
@@ -80,7 +80,7 @@ check("收录区特展=特002", els.specialList.children.length === 1);
 fireHash("#/exhibit/harry-homepage");
 setTimeout(() => {
   check("直链№001自动落创作区", els.indexTitle.textContent.includes("创作"));
-  check("集章 1/6", els.stampProgress.textContent.includes("1 / 6"));
+  check("集章 1/7", els.stampProgress.textContent.includes("1 / 7"));
   console.log(ok ? "── 全部通过 ──" : "── 存在失败 ──");
   process.exit(ok ? 0 : 1);
 }, 1200);
