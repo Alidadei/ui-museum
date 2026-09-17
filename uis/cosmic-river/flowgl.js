@@ -36,15 +36,22 @@
     "uniform vec4 u_box;" +
     "uniform vec2 u_flAmp;" +
     "uniform vec2 u_swAmp;" +
+    "uniform float u_waver;" +
+    "uniform float u_diss;" +
     "void main(){" +
     "  vec4 f = texture2D(u_flow, v_uv);" +
     "  vec2 dir = (f.rg - 0.5) * 2.0;" +
-    "  float m = f.b;" +
-    "  float tt = u_t / u_cycle + f.a;" +
+    "  float mS = f.b;" +
+    "  float ph = f.a;" +
+    "  float tt = u_t / u_cycle + ph;" +
     "  float f0 = fract(tt);" +
     "  float f1 = fract(tt + 0.5);" +
-    "  vec2 oA = dir * (f0 - 0.5) * 2.0 * u_amp * m;" +
-    "  vec2 oB = dir * (f1 - 0.5) * 2.0 * u_amp * m;" +
+    "  vec2 per = vec2(-dir.y, dir.x);" +
+    "  vec2 oA = dir * (f0 - 0.5) * 2.0 * u_amp * mS;" +
+    "  vec2 oB = dir * (f1 - 0.5) * 2.0 * u_amp * mS;" +
+    "  vec2 waver = per * sin(u_t * 0.7 + ph * 6.2831) * u_waver * mS;" +
+    "  oA += waver;" +
+    "  oB += waver;" +
     "  vec2 uvL = clamp((v_uv - u_box.xy) / u_box.zw, 0.0, 1.0);" +
     "  vec4 L = texture2D(u_loc, uvL);" +
     "  vec2 robe = (L.rg - 0.5) * 2.0;" +
@@ -57,7 +64,10 @@
     "  vec3 cA = texture2D(u_img, v_uv + oA).rgb;" +
     "  vec3 cB = texture2D(u_img, v_uv + oB).rgb;" +
     "  float wA = abs(f0 * 2.0 - 1.0);" +
-    "  gl_FragColor = vec4(mix(cB, cA, wA), 1.0);" +
+    "  vec3 col = mix(cB, cA, wA);" +
+    "  float diss = 0.5 + 0.5 * sin(u_t * 0.55 + ph * 6.2831);" +
+    "  col = mix(col, vec3(0.008, 0.008, 0.02), mS * diss * u_diss);" +
+    "  gl_FragColor = vec4(col, 1.0);" +
     "}";
 
   function shader(gl, type, src) {
@@ -125,7 +135,7 @@
     }
 
     var U = {};
-    ["u_img", "u_flow", "u_loc", "u_t", "u_cycle", "u_amp", "u_box", "u_flAmp", "u_swAmp"].forEach(function (n) {
+    ["u_img", "u_flow", "u_loc", "u_t", "u_cycle", "u_amp", "u_box", "u_flAmp", "u_swAmp", "u_waver", "u_diss"].forEach(function (n) {
       U[n] = gl.getUniformLocation(prog, n);
     });
     gl.uniform1i(U.u_img, 0);
@@ -137,6 +147,8 @@
     gl.uniform4f(U.u_box, b.x, b.y, b.w, b.h);
     gl.uniform2f(U.u_flAmp, (opts.flAmpPx || 0) / 100, (opts.flAmpPx || 0) / 100);
     gl.uniform2f(U.u_swAmp, (opts.swAmpPx || 0) / 100, (opts.swAmpPx || 0) / 100);
+    gl.uniform1f(U.u_waver, (opts.waverPx || 0) / 100);
+    gl.uniform1f(U.u_diss, opts.diss || 0);
 
     var dead = false;
     canvas.addEventListener("webglcontextlost", function (e) {
@@ -161,6 +173,8 @@
         gl.uniform2f(U.u_amp, (opts.ampPx || 6) / w, (opts.ampPx || 6) / h);
         gl.uniform2f(U.u_flAmp, (opts.flAmpPx || 0) / w, (opts.flAmpPx || 0) / h);
         gl.uniform2f(U.u_swAmp, (opts.swAmpPx || 0) / w, (opts.swAmpPx || 0) / h);
+        gl.uniform1f(U.u_waver, (opts.waverPx || 0) / h);
+        gl.uniform1f(U.u_diss, opts.diss || 0);
       },
       render: function (tSec) {
         if (dead) return;

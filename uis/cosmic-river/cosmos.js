@@ -177,15 +177,18 @@
    * 把流场编码成 RGBA 小纹理交给 FlowGL：
    * RG=流向（0.5 基线）、B=运动遮罩（亮处流、暗处与行人驻足）、
    * A=空间相位（各处滑动错峰）。行序顶→底，与着色器 v_uv 一致。 */
-  var FLOW_AMP = 0;     // 整图平流幅度——用户定版：流线纹理要静止，置 0
-  var FLOW_CYCLE = 9;   //（保留着色器通用性；幅度为 0 时无位移）
+  var SMOKE_DRIFT = 3.5; // 轻烟沿河漂移幅度（显示像素/半周期）——只作用于外围烟带
+  var SMOKE_WAVER = 1.2; // 烟带横向摆幅（显示像素）
+  var SMOKE_DISS = 0.22; // 消隐深度（外围丝线周期性隐入夜空的上限）
+  var FLOW_CYCLE = 16;   // 烟带回卷周期（秒）——放慢到接近烟的呼吸
   var flowTex = null, flowCtl = null;
   function buildFlowTexture() {
     var n = fw * fh;
     var d = new Uint8Array(n * 4);
     for (var i = 0; i < n; i++) {
+      // 烟带遮罩：只取「夜空↔河核」之间的外缘细线——外围丝线才飘，核心与夜空不动
       var m = fL[i];
-      m = m < 0.22 ? 0 : m > 0.5 ? 1 : (m - 0.22) / 0.28;
+      m = m < 0.06 ? 0 : m < 0.12 ? (m - 0.06) / 0.06 : m < 0.22 ? 1 : m < 0.34 ? 1 - (m - 0.22) / 0.12 : 0;
       // 行人保护区：剪影与投影周围运动衰减到零——流动的是河，人驻足原地
       var du = ((i % fw) + 0.5) / fw - 0.593;
       var dv = (((i / fw) | 0) + 0.5) / fh - 0.502;
@@ -263,8 +266,10 @@
   function startFlow() {
     if (quiet || !window.FlowGL || !flowTex) return;
     flowCtl = FlowGL.create(glCv, img, flowTex, {
-      ampPx: FLOW_AMP,
+      ampPx: SMOKE_DRIFT,
       cycle: FLOW_CYCLE,
+      waverPx: SMOKE_WAVER,
+      diss: SMOKE_DISS,
       locTex: locTex,
       flAmpPx: 2.3,
       swAmpPx: 3.4,
@@ -695,7 +700,7 @@
       testEl.textContent =
         "自检 · 图像 " + imgTag +
         " · 流场 " + state.field[0] + "×" + state.field[1] +
-        " · GL " + state.flow + (FLOW_AMP > 0 ? " · 流线平流" : " · 流线静止") +
+        " · GL " + state.flow + (SMOKE_DRIFT > 0 ? " · 轻烟消散" : " · 流线静止") +
         " · 河 " + state.drops + " · 星 " + state.twinkles + "+" + state.ambient +
         " · " + wingTag +
         " · 句#" + (cur ? cur.i : "-") + "/" + state.lineTotal + "「" + (cur ? cur.text : "…") + "」" +

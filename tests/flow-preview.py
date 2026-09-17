@@ -8,8 +8,10 @@ from PIL import Image
 
 SRC = "uis/cosmic-river/cosmos.jpg"
 VW, VH = 1280, 800
-AMP_PX = 6.0
-CYCLE = 9.0
+AMP_PX = 3.5   # 轻烟沿河漂移
+CYCLE = 16.0  # 烟带回卷周期
+WAVER_PX = 1.2
+DISS = 0.22
 SW = 96
 
 img = Image.open(SRC).convert("RGB")
@@ -42,7 +44,10 @@ mag = np.sqrt(px * px + py * py)
 ok = mag > 1e-3
 px = np.where(ok, px / np.maximum(mag, 1e-9), 0.0)
 py = np.where(ok, py / np.maximum(mag, 1e-9), 0.55)
-mask = np.clip((sm - 0.22) / 0.28, 0, 1)
+mask = np.zeros_like(sm)
+b12 = (sm >= 0.06) & (sm < 0.12); mask[b12] = (sm[b12] - 0.06) / 0.06
+b22 = (sm >= 0.12) & (sm < 0.22); mask[b22] = 1.0
+b34 = (sm >= 0.22) & (sm < 0.34); mask[b34] = 1 - (sm[b34] - 0.22) / 0.12
 yy, xx = np.mgrid[0:fh, 0:fw]
 du = (xx + 0.5) / fw - 0.593
 dv = (yy + 0.5) / fh - 0.502
@@ -126,6 +131,10 @@ def shade(t):
     ay = ay + robeU[..., 1] * fl * FL_AMP / VH + shadU[..., 1] * sw * SW_AMP / VH
     bx = bx + robeU[..., 0] * fl * FL_AMP / rect_w + shadU[..., 0] * sw * SW_AMP / rect_w
     by = by + robeU[..., 1] * fl * FL_AMP / VH + shadU[..., 1] * sw * SW_AMP / VH
+    perx = -fy; pery = fx
+    wv = np.sin(t * 0.7 + ph * 6.2831) * WAVER_PX * m
+    ax = ax + perx * wv / rect_w; ay = ay + pery * wv / VH
+    bx = bx + perx * wv / rect_w; by = by + pery * wv / VH
     xs = np.arange(W)[None, :].repeat(H, 0).astype(float)
     ys = np.arange(H)[:, None].repeat(W, 1).astype(float)
 
@@ -141,7 +150,9 @@ def shade(t):
         return out
 
     wA = np.abs(f0 * 2 - 1)[..., None]
-    return samp(ax * W, ay * H) * wA + samp(bx * W, by * H) * (1 - wA)
+    col = samp(ax * W, ay * H) * wA + samp(bx * W, by * H) * (1 - wA)
+    diss = (0.5 + 0.5 * np.sin(t * 0.55 + ph * 6.2831)) * m * DISS
+    return col * (1 - diss[..., None]) + np.array([2.0, 2.0, 5.0]) * diss[..., None]
 
 # 底部流线区：原图 y∈[0.55,1.0]（rect 内坐标，W=rect_w）
 bot_o = disp[int(VH * 0.55):, :]
