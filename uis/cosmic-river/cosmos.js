@@ -14,6 +14,12 @@
  *   2) 微光：从亮部采样的定点星，各自以 2~7 秒周期呼吸明灭。
  *   3) 环境星：视口黑幕上的稀疏小星，画框外也是宇宙。
  *
+ * 桌面全景（两翼星域）：竖图手机看刚好；桌面宽幅时两侧若留黑幕
+ * 太浪费——从原图边缘取「镜像延展条」保证接缝处纹路零断裂地延续
+ * 出去并渐渐隐没，再从原图里提取孤立星点（亮核+暗边才算）播进
+ * 两翼、逐颗呼吸明灭。底色取原图边缘的暗部色调，接缝天衣无缝。
+ * 侧宽不足（手机竖屏）自动退化为纯竖图。
+ *
  * 每日一句：右上竖排行楷，句子存于同目录 quotes.json（可自行增删），
  *   每天零点（UTC+8）按顺序轮换；首展日 2026-09-17 显示第一句。
  *
@@ -27,6 +33,8 @@
   var gxCv = document.getElementById("gx");   // 亮点层（每帧清屏）
   var fxCtx = fxCv.getContext("2d");
   var gxCtx = gxCv.getContext("2d");
+  var wxCv = document.getElementById("wx");   // 两翼星域（桌面全景，垫在图后）
+  var wxCtx = wxCv.getContext("2d");
   var quoteEl = document.getElementById("quote");
   var testEl = document.getElementById("selftest");
 
@@ -193,6 +201,178 @@
   var spCool = makeSprite(168, 196, 255);
   var spWarm = makeSprite(255, 206, 150);
 
+  /* ---------------- 桌面全景：两翼星域 ----------------
+   * 全部素材取自原图自身：接缝处用「镜像延展条」（反射保证边界
+   * 像素一一连续，再渐隐归黑），星点只收「亮核 + 暗边」的孤立星，
+   * 底色取原图左右边缘的暗部均值。手机侧宽不够时整体退场。 */
+  var WING_MIN_SIDE = 220;  // 侧宽小于此不开全景（手机竖屏）
+  var WING_STRIP = 140;     // 镜像延展条深度（显示像素）——要浅：太深会把
+                            // 可辨认的形体（人影、S 弯）镜像出去，穿帮
+  var sprites = [], toneL = [1, 1, 3], toneR = [1, 1, 3];
+  var wingStars = [], wingsOn = false;
+
+  function lumAt(d, i) { return (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255; }
+
+  function edgeTone(d, iw, ih, x0) {
+    var r = 0, g = 0, b = 0, n = 0;
+    for (var y = 0; y < ih; y += 3) {
+      for (var x = x0; x < x0 + 4 && x < iw; x++) {
+        var i = (y * iw + x) * 4;
+        if (lumAt(d, i) < 0.12) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+      }
+    }
+    if (!n) return [1, 1, 3];
+    return [Math.round(r / n), Math.round(g / n), Math.round(b / n)];
+  }
+
+  function extractSprites() {
+    sprites.length = 0;
+    var iw = img.naturalWidth, ih = img.naturalHeight;
+    var off = document.createElement("canvas");
+    off.width = iw; off.height = ih;
+    var octx = off.getContext("2d", { willReadFrequently: true });
+    var d = null;
+    try {
+      octx.drawImage(img, 0, 0);
+      d = octx.getImageData(0, 0, iw, ih).data;
+    } catch (e) { d = null; }
+    if (!d) return;
+    toneL = edgeTone(d, iw, ih, 0);
+    toneR = edgeTone(d, iw, ih, Math.max(0, iw - 4));
+    var R = 7, found = 0;
+    for (var y = R; y < ih - R && found < 160; y += 7) {
+      for (var x = R; x < iw - R && found < 160; x += 7) {
+        var i = (y * iw + x) * 4;
+        var L = lumAt(d, i);
+        if (L < 0.5) continue;
+        var border = 0, cnt = 0;
+        for (var dy = -R; dy <= R; dy += 2) {
+          for (var dx = -R; dx <= R; dx += 2) {
+            if (!dx && !dy) continue;
+            border += lumAt(d, ((y + dy) * iw + (x + dx)) * 4);
+            cnt++;
+          }
+        }
+        if (border / cnt > 0.16) continue; // 周围太亮＝星团内部/河道，不孤立
+        var s = document.createElement("canvas");
+        s.width = 15; s.height = 15;
+        var sc2 = s.getContext("2d");
+        sc2.drawImage(off, x - 7, y - 7, 15, 15, 0, 0, 15, 15);
+        // 径向羽化：补丁背景不是纯黑，不羽化会贴出方块边
+        sc2.globalCompositeOperation = "destination-in";
+        var feather = sc2.createRadialGradient(7.5, 7.5, 0, 7.5, 7.5, 7.5);
+        feather.addColorStop(0, "rgba(0,0,0,1)");
+        feather.addColorStop(0.55, "rgba(0,0,0,0.85)");
+        feather.addColorStop(1, "rgba(0,0,0,0)");
+        sc2.fillStyle = feather;
+        sc2.fillRect(0, 0, 15, 15);
+        sprites.push({ c: s, peak: L });
+        found++;
+        x += 10; // 同一颗星只取一次
+      }
+    }
+  }
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function buildWings() {
+    wingStars.length = 0;
+    wingsOn = rect.x >= WING_MIN_SIDE && sprites.length > 0;
+    wxCtx.clearRect(0, 0, vw, vh);
+    if (!wingsOn) return;
+    var iw = img.naturalWidth, ih = img.naturalHeight;
+    var scale = rect.h / ih;
+    var sideW = rect.x;
+    var rng = mulberry32(20260917); // 固定种子：resize 后星图稳定不跳
+    for (var dir = -1; dir <= 1; dir += 2) {
+      var seamX = dir < 0 ? rect.x : rect.x + rect.w;
+      var tone = dir < 0 ? toneL : toneR;
+      // 左缘离人影远（人影在图内 x≈0.6），延展条可以长些、渐隐慢些；
+      // 右缘必须短——深了会把人影镜像出去穿帮
+      var strip = dir < 0 ? Math.min(240, Math.floor(sideW * 0.55))
+                          : Math.min(WING_STRIP, Math.floor(sideW * 0.5));
+
+      // 底色：与原图边缘同调的暗
+      wxCtx.fillStyle = "rgb(" + tone[0] + "," + tone[1] + "," + tone[2] + ")";
+      wxCtx.fillRect(dir < 0 ? 0 : seamX, 0, sideW, vh);
+
+      // 镜像延展条：反射对接缝，渐隐进黑（在临时画布上做完淡出再贴）
+      var tmp = document.createElement("canvas");
+      tmp.width = strip; tmp.height = Math.ceil(vh);
+      var tc = tmp.getContext("2d");
+      var srcS = Math.min(iw, strip / scale);
+      tc.translate(strip, 0);
+      tc.scale(-1, 1);
+      tc.drawImage(img, dir < 0 ? 0 : iw - srcS, 0, srcS, ih, 0, 0, strip, vh);
+      tc.setTransform(1, 0, 0, 1, 0, 0);
+      // 横向涂抹：缩到 1/8 再拉回。镜像条若保留原结构，「黑洞」这类
+      // 可辨认的形状会沿接缝对称出去一眼穿帮；抹成光痕就只是余晖。
+      var bw = Math.max(2, Math.round(strip / 8));
+      var bh = Math.max(2, Math.round(tmp.height / 8));
+      var tiny = document.createElement("canvas");
+      tiny.width = bw; tiny.height = bh;
+      tiny.getContext("2d").drawImage(tmp, 0, 0, bw, bh);
+      tc.clearRect(0, 0, strip, tmp.height);
+      tc.imageSmoothingEnabled = true;
+      tc.drawImage(tiny, 0, 0, strip, tmp.height);
+      tc.globalCompositeOperation = "destination-in";
+      var fade = tc.createLinearGradient(0, 0, strip, 0);
+      if (dir < 0) { // 接缝在 temp 右缘（左侧条长，渐隐更缓）
+        fade.addColorStop(0, "rgba(0,0,0,0)");
+        fade.addColorStop(0.6, "rgba(0,0,0,0.3)");
+        fade.addColorStop(1, "rgba(0,0,0,1)");
+      } else {       // 接缝在 temp 左缘
+        fade.addColorStop(0, "rgba(0,0,0,1)");
+        fade.addColorStop(0.45, "rgba(0,0,0,0.25)");
+        fade.addColorStop(1, "rgba(0,0,0,0)");
+      }
+      tc.fillStyle = fade;
+      tc.fillRect(0, 0, strip, tmp.height);
+      wxCtx.drawImage(tmp, dir < 0 ? seamX - strip - 1 : seamX - 1, 0);
+
+      // 极淡的雾气，暗示星河在画外还有余脉
+      for (var h2 = 0; h2 < 2; h2++) {
+        var hr = 160 + rng() * 260;
+        var hx = seamX + dir * (strip * 0.7 + rng() * Math.max(0, sideW - strip * 0.7 - hr * 0.5));
+        var hy = rng() * vh;
+        var g2 = wxCtx.createRadialGradient(hx, hy, 0, hx, hy, hr);
+        g2.addColorStop(0, "rgba(150,165,205,0.065)");
+        g2.addColorStop(1, "rgba(150,165,205,0)");
+        wxCtx.fillStyle = g2;
+        wxCtx.fillRect(hx - hr, hy - hr, hr * 2, hr * 2);
+      }
+
+      // 播种：原图里摘来的孤立星，逐颗会呼吸
+      var zoneW = Math.max(40, sideW - strip);
+      var count = Math.round((sideW * vh) / 3800);
+      for (var k = 0; k < count; k++) {
+        var spr = sprites[Math.floor(rng() * sprites.length)];
+        var dx = strip * 0.35 + rng() * zoneW;
+        wingStars.push({
+          x: seamX + dir * dx,
+          y: rng() * vh,
+          s: spr,
+          sc: 0.5 + rng() * 0.9,
+          a: 0.3 + rng() * 0.6,
+          period: 2 + rng() * 6,
+          phase: rng() * Math.PI * 2,
+        });
+      }
+    }
+    state.wings.on = wingsOn;
+    state.wings.side = Math.round(rect.x);
+    state.wings.stars = wingStars.length;
+    state.sprites = sprites.length;
+  }
+
+
   /* ---------------- 粒子 / 星 ---------------- */
   var drops = [], twinkles = [], ambient = [];
   var N_DROPS = 240, N_TWINKLE = 120, N_AMBIENT = 90;
@@ -254,11 +434,12 @@
   function resize() {
     fitRect();
     var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    [fxCv, gxCv].forEach(function (c) {
+    [fxCv, gxCv, wxCv].forEach(function (c) {
       c.width = Math.round(vw * dpr);
       c.height = Math.round(vh * dpr);
       c.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
     });
+    buildWings();
   }
 
   /* ---------------- 主循环 ---------------- */
@@ -330,6 +511,14 @@
       gxCtx.globalAlpha = aa;
       gxCtx.drawImage(p.warm ? spWarm : spCool, ax - as, ay - as, as * 2, as * 2);
     }
+    // 两翼星域（桌面全景：原图摘来的星，逐颗呼吸）
+    for (i = 0; i < wingStars.length; i++) {
+      p = wingStars[i];
+      var w4 = 0.55 + 0.45 * Math.sin(tw * Math.PI * 2 / p.period + p.phase);
+      var ws = 15 * p.sc;
+      gxCtx.globalAlpha = p.a * (0.3 + 0.7 * w4);
+      gxCtx.drawImage(p.s.c, p.x - ws / 2, p.y - ws / 2, ws, ws);
+    }
 
     fxCtx.globalCompositeOperation = "lighter";
     gxCtx.globalAlpha = 1;
@@ -364,31 +553,42 @@
       gxCtx.globalAlpha = p.base * 0.5;
       gxCtx.drawImage(p.warm ? spWarm : spCool, p.u * vw - as, p.v * vh - as, as * 2, as * 2);
     }
+    for (i = 0; i < wingStars.length; i++) {
+      p = wingStars[i];
+      var ws = 15 * p.sc;
+      gxCtx.globalAlpha = p.a * 0.55;
+      gxCtx.drawImage(p.s.c, p.x - ws / 2, p.y - ws / 2, ws, ws);
+    }
     gxCtx.globalAlpha = 1;
   }
 
   /* ---------------- 自检 ?t=1 ---------------- */
   var state = {
     imgOK: false, iw: 0, ih: 0, field: [0, 0],
-    drops: 0, twinkles: 0, ambient: 0,
+    drops: 0, twinkles: 0, ambient: 0, sprites: 0,
+    wings: { on: false, side: 0, stars: 0 },
     line: null, lineTotal: lines.length, mode: mode, fps: 60,
   };
+  window.__cosmos = state; // 自动化/测试随时可读（面板只在 ?t=1 显示）
   if (DEBUG) {
     testEl.hidden = false;
     setInterval(function () {
       state.drops = drops.length; state.twinkles = twinkles.length; state.ambient = ambient.length;
+      state.sprites = sprites.length;
+      state.wings.on = wingsOn; state.wings.side = Math.round(rect.x); state.wings.stars = wingStars.length;
       state.field = [fw, fh]; state.mode = mode; state.fps = Math.round(fps);
       var cur = currentLine();
       state.line = cur;
       var imgTag = state.imgOK ? "✓ " + state.iw + "×" + state.ih : "✗ 加载失败";
+      var wingTag = wingsOn ? "翼星 " + wingStars.length + "/侧" + state.wings.side : "翼 –（侧宽不足）";
       testEl.textContent =
         "自检 · 图像 " + imgTag +
         " · 流场 " + state.field[0] + "×" + state.field[1] +
         " · 河 " + state.drops + " · 星 " + state.twinkles + "+" + state.ambient +
+        " · " + wingTag +
         " · 句#" + (cur ? cur.i : "-") + "/" + state.lineTotal + "「" + (cur ? cur.text : "…") + "」" +
         " · " + (quiet ? "静态" : state.fps + "fps");
     }, 500);
-    window.__cosmos = state;
   }
 
   /* ---------------- 启动 ---------------- */
@@ -397,6 +597,7 @@
     state.iw = img.naturalWidth; state.ih = img.naturalHeight;
     fitRect();
     computeField();
+    extractSprites();
     resize();
     buildPopulations();
     if (quiet) { stillFrame(); } else { start(); }

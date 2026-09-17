@@ -21,6 +21,14 @@ function syntheticData(fw, fh) {
       if (x >= 40 && x <= 60) { d[i] = 200; d[i + 1] = 215; d[i + 2] = 255; d[i + 3] = 255; } // 冷带宽河
     }
   }
+  // 散布孤立星（亮核+暗边，供精灵提取——真实图像的稀疏星野就是这样）
+  for (let k = 0; k < 400; k++) {
+    const x = (k * 97 + 13) % fw;
+    const y = (k * 131 + 7) % fh;
+    if ((x >= 4 && x <= 18) || (x >= 38 && x <= 62)) continue; // 别落进亮带
+    const i = (y * fw + x) * 4;
+    d[i] = 235; d[i + 1] = 240; d[i + 2] = 255; d[i + 3] = 255;
+  }
   return d;
 }
 function makeCtx(canvas) {
@@ -29,10 +37,14 @@ function makeCtx(canvas) {
     globalAlpha: 1, globalCompositeOperation: "source-over", fillStyle: "",
     drawImageCount: 0, fillRectCount: 0, cleared: 0, transformed: 0,
     setTransform() { this.transformed++; },
+    save() {}, restore() {},
+    translate() {}, scale() {},
+    beginPath() {}, rect() {}, clip() {},
     fillRect() { this.fillRectCount++; },
     clearRect() { this.cleared++; },
     drawImage() { this.drawImageCount++; },
     createRadialGradient() { return { addColorStop() {} }; },
+    createLinearGradient() { return { addColorStop() {} }; },
     getImageData(x, y, w, h) { return { data: syntheticData(w, h), width: w, height: h }; },
   };
 }
@@ -46,11 +58,11 @@ function makeCanvas() {
 const imgStub = { complete: true, naturalWidth: IW, naturalHeight: IH, listeners: {}, addEventListener(t, f) { (this.listeners[t] = this.listeners[t] || []).push(f); } };
 const quoteEl = { textContent: "", dataset: {}, _on: false, classList: { add(c) { if (c === "on") quoteEl._on = true; }, remove(c) { if (c === "on") quoteEl._on = false; }, contains(c) { return c === "on" && quoteEl._on; } } };
 const testEl = { hidden: true, textContent: "" };
-const fxCv = makeCanvas(), gxCv = makeCanvas();
+const fxCv = makeCanvas(), gxCv = makeCanvas(), wxCv = makeCanvas();
 const docListeners = {};
 const documentStub = {
   getElementById(id) {
-    return { cosmos: imgStub, fx: fxCv, gx: gxCv, quote: quoteEl, selftest: testEl }[id] || makeCanvas();
+    return { cosmos: imgStub, fx: fxCv, gx: gxCv, wx: wxCv, quote: quoteEl, selftest: testEl }[id] || makeCanvas();
   },
   createElement(tag) { return makeCanvas(); },
   addEventListener(t, f) { (docListeners[t] = docListeners[t] || []).push(f); },
@@ -104,6 +116,14 @@ check("亮点层在画（星/粒子头）", gxCtx.drawImageCount > 500);
 check("拖尾层在画（粒子尾迹）", fxCtx.drawImageCount > 100);
 check("亮点层每帧清屏", gxCtx.cleared >= 120);
 check("拖尾层在衰减", fxCtx.fillRectCount >= 120);
+
+// 桌面全景：桩视口 1280×800 → 侧宽 414 ≥ 220，两翼应开启
+const cosmos = windowStub.__cosmos;
+const wxCtx = wxCv.getContext("2d");
+check("提取到孤立星精灵", cosmos && cosmos.sprites > 0);
+check("全景开启且侧宽 414", cosmos && cosmos.wings.on === true && cosmos.wings.side === 414);
+check("两翼播种 ≥ 100", cosmos && cosmos.wings.stars >= 100);
+check("两翼画了延展条/底色/雾气", wxCtx.drawImageCount >= 2 && wxCtx.fillRectCount >= 2);
 
 // 每日一句：fallback + 今日序号（与 cosmos.js 同式：首展 2026-09-17 → #0）
 (async () => {

@@ -17,7 +17,7 @@ body {
 /* 图：等比 contain 居中，四周黑幕与图内夜空自然融为一体。
  * 用绝对定位 inset:0 + margin:auto 居中——grid/flex 里 max-height:100%
  * 会相对内容行高解析导致钳不住；绝对定位下百分比相对视口，稳。 */
-.scene { position: fixed; inset: 0; }
+.scene { position: fixed; inset: 0; z-index: 2; }
 .scene img {
   position: absolute;
   inset: 0;
@@ -30,10 +30,11 @@ body {
   -webkit-user-drag: none;
 }
 
-/* 光：fx 河流拖尾（慢衰减），gx 亮点层（每帧清屏） */
-#fx, #gx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-#fx { z-index: 2; }
-#gx { z-index: 3; }
+/* 光：wx 两翼星域（桌面端补全屏，垫在图后），fx 河流拖尾（慢衰减），gx 亮点层（每帧清屏） */
+#wx, #fx, #gx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#wx { z-index: 1; }
+#fx { z-index: 3; }
+#gx { z-index: 4; }
 
 /* 右上竖排行楷 · 每日一句，淡淡引入 */
 #quote {
