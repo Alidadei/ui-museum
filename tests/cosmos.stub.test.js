@@ -49,7 +49,7 @@ function makeCtx(canvas) {
   };
 }
 function makeCanvas() {
-  const c = { width: 0, height: 0, _ctx: null, listeners: {} };
+  const c = { width: 0, height: 0, _ctx: null, listeners: {}, style: {} };
   c.getContext = function () { return (this._ctx ||= makeCtx(this)); };
   c.addEventListener = (t, f) => { (c.listeners[t] = c.listeners[t] || []).push(f); };
   return c;
@@ -124,6 +124,7 @@ check("提取到孤立星精灵", cosmos && cosmos.sprites > 0);
 check("全景开启且侧宽 414", cosmos && cosmos.wings.on === true && cosmos.wings.side === 414);
 check("两翼播种 ≥ 100", cosmos && cosmos.wings.stars >= 100);
 check("两翼画了延展条/底色/雾气", wxCtx.drawImageCount >= 2 && wxCtx.fillRectCount >= 2);
+check("无 WebGL 环境回退 2d（不崩）", cosmos.flow === "2d");
 
 // 每日一句：fallback + 今日序号（与 cosmos.js 同式：首展 2026-09-17 → #0）
 (async () => {

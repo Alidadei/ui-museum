@@ -35,6 +35,7 @@
   var gxCtx = gxCv.getContext("2d");
   var wxCv = document.getElementById("wx");   // 两翼星域（桌面全景，垫在图后）
   var wxCtx = wxCv.getContext("2d");
+  var glCv = document.getElementById("gl");   // WebGL 平流层（整幅图沿河道流动）
   var quoteEl = document.getElementById("quote");
   var testEl = document.getElementById("selftest");
 
@@ -169,6 +170,47 @@
       fU[i] = px; fV[i] = py;
       fL[i] = sm[i];
     }
+  }
+
+  /* ---------------- WebGL 平流纹理 ----------------
+   * 把流场编码成 RGBA 小纹理交给 FlowGL：
+   * RG=流向（0.5 基线）、B=运动遮罩（亮处流、暗处与行人驻足）、
+   * A=空间相位（各处滑动错峰）。行序顶→底，与着色器 v_uv 一致。 */
+  var FLOW_AMP = 6;     // 最大位移（显示像素）
+  var FLOW_CYCLE = 9;   // 平流回卷周期（秒）
+  var flowTex = null, flowCtl = null;
+  function buildFlowTexture() {
+    var n = fw * fh;
+    var d = new Uint8Array(n * 4);
+    for (var i = 0; i < n; i++) {
+      var m = fL[i];
+      m = m < 0.22 ? 0 : m > 0.5 ? 1 : (m - 0.22) / 0.28;
+      // 行人保护区：剪影与投影周围运动衰减到零——流动的是河，人驻足原地
+      var du = ((i % fw) + 0.5) / fw - 0.593;
+      var dv = (((i / fw) | 0) + 0.5) / fh - 0.502;
+      var pd = Math.sqrt((du / 0.05) * (du / 0.05) + (dv / 0.062) * (dv / 0.062));
+      if (pd < 1.5) m *= pd < 1 ? 0 : (pd - 1) / 0.5;
+      var x = (i % fw) + 0.5, y = ((i / fw) | 0) + 0.5;
+      var h = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
+      var j = i * 4;
+      d[j] = Math.round((fU[i] * 0.5 + 0.5) * 255);
+      d[j + 1] = Math.round((fV[i] * 0.5 + 0.5) * 255);
+      d[j + 2] = Math.round(m * 255);
+      d[j + 3] = Math.round(h * 255);
+    }
+    flowTex = { data: d, w: fw, h: fh };
+  }
+  function startFlow() {
+    if (quiet || !window.FlowGL || !flowTex) return;
+    flowCtl = FlowGL.create(glCv, img, flowTex, {
+      ampPx: FLOW_AMP,
+      cycle: FLOW_CYCLE,
+      onLost: function () {
+        flowCtl = null;
+        state.flow = "lost";
+      },
+    });
+    state.flow = flowCtl ? "webgl" : "2d";
   }
 
   var F = { x: 0, y: 0, l: 0 };
@@ -441,6 +483,7 @@
       c.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
     });
     buildWings();
+    if (flowCtl) flowCtl.resize(rect.x, rect.y, rect.w, rect.h, dpr);
   }
 
   /* ---------------- 主循环 ---------------- */
@@ -451,6 +494,9 @@
     var dt = lastT ? Math.min((t - lastT) / 1000, 0.05) : 0.016;
     lastT = t;
     if (dt > 0) fps += (1 / dt - fps) * 0.05;
+
+    // 整幅图沿河道平流（WebGL 层）
+    if (flowCtl) flowCtl.render(t / 1000);
 
     // 拖尾层：慢慢擦除自己（不做减法于画面，只擦画布自身）
     fxCtx.globalCompositeOperation = "destination-out";
@@ -568,6 +614,7 @@
     imgOK: false, iw: 0, ih: 0, field: [0, 0],
     drops: 0, twinkles: 0, ambient: 0, sprites: 0,
     wings: { on: false, side: 0, stars: 0 },
+    flow: "2d",
     line: null, lineTotal: lines.length, mode: mode, fps: 60,
   };
   window.__cosmos = state; // 自动化/测试随时可读（面板只在 ?t=1 显示）
@@ -585,6 +632,7 @@
       testEl.textContent =
         "自检 · 图像 " + imgTag +
         " · 流场 " + state.field[0] + "×" + state.field[1] +
+        " · 平流 " + state.flow +
         " · 河 " + state.drops + " · 星 " + state.twinkles + "+" + state.ambient +
         " · " + wingTag +
         " · 句#" + (cur ? cur.i : "-") + "/" + state.lineTotal + "「" + (cur ? cur.text : "…") + "」" +
@@ -598,6 +646,8 @@
     state.iw = img.naturalWidth; state.ih = img.naturalHeight;
     fitRect();
     computeField();
+    buildFlowTexture();
+    startFlow();
     extractSprites();
     resize();
     buildPopulations();
