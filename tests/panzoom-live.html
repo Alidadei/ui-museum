@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><title>panzoom live check</title></head>
+<body>
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<script src="../uis/cosmic-river/panzoom.js"></script>
+<script>
+(function () {
+  var out = [];
+  function t() { return document.getElementById("stage").style.transform || "(none)"; }
+  var stage = document.getElementById("stage");
+  var api = PanZoom.attach(stage, { max: 4 });
+
+  // 1) 1× 状态下双击：放大到 2.2 后，紧随的原生 dblclick 不得复位
+  stage.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, clientX: 800, clientY: 400, bubbles: true }));
+  window.dispatchEvent(new PointerEvent("pointerup", { pointerId: 1, clientX: 800, clientY: 400, bubbles: true }));
+  stage.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, clientX: 802, clientY: 402, bubbles: true }));
+  window.dispatchEvent(new PointerEvent("pointerup", { pointerId: 1, clientX: 802, clientY: 402, bubbles: true }));
+  out.push("2tap=" + t());
+  stage.dispatchEvent(new MouseEvent("dblclick", { clientX: 802, clientY: 402, bubbles: true }));
+  out.push("dblclick=" + t());
+
+  // 2) 滚轮放大（光标锚点）
+  stage.dispatchEvent(new WheelEvent("wheel", { deltaY: -240, deltaMode: 0, clientX: 960, clientY: 540, cancelable: true }));
+  out.push("wheel=" + t());
+
+  // 3) 拖动
+  stage.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, clientX: 500, clientY: 500, bubbles: true }));
+  window.dispatchEvent(new PointerEvent("pointermove", { pointerId: 1, clientX: 660, clientY: 590, bubbles: true }));
+  window.dispatchEvent(new PointerEvent("pointerup", { pointerId: 1, clientX: 660, clientY: 590, bubbles: true }));
+  out.push("drag=" + t());
+
+  // 4) 放大状态下双击：应复位归中，且不被 dblclick 再次放大
+  stage.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, clientX: 900, clientY: 500, bubbles: true }));
+  window.dispatchEvent(new PointerEvent("pointerup", { pointerId: 1, clientX: 900, clientY: 500, bubbles: true }));
+  stage.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, clientX: 902, clientY: 502, bubbles: true }));
+  window.dispatchEvent(new PointerEvent("pointerup", { pointerId: 1, clientX: 902, clientY: 502, bubbles: true }));
+  stage.dispatchEvent(new MouseEvent("dblclick", { clientX: 902, clientY: 502, bubbles: true }));
+  out.push("reset=" + t());
+
+  document.title = "DONE";
+  var pre = document.createElement("pre");
+  pre.id = "result";
+  pre.textContent = "RESULT\n" + out.join("\n");
+  document.body.appendChild(pre);
+})();
+</script>
+</body>
+</html>

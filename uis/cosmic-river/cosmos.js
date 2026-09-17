@@ -423,11 +423,13 @@
       // 从图像内 2px 处起采：最外沿列常有压缩暗边，镜像会把暗边复制成一条线
       tc.drawImage(img, dir < 0 ? 2 : iw - srcS - 2, 0, srcS, ih, 0, 0, strip, vh);
       tc.setTransform(1, 0, 0, 1, 0, 0);
-      // 三级离焦逐层向外加权：贴缝清晰、越远越化——焦点像烟雾一样散掉
+      // 三级离焦逐层向外加权：贴缝清晰、越远越化——焦点像烟雾一样散掉。
+      // reach = 距缝多少条宽比例处该层达到满权重，必须随模糊强度递增：
+      // 轻糊早点渗入（本身不显眼），重糊要留足跑道，否则贴缝即跳变。
       var levels = [
-        { div: 2, to: 0.5, a: 0.8 },
-        { div: 4, to: 0.75, a: 0.9 },
-        { div: 8, to: 0.95, a: 1.0 },
+        { div: 2, reach: 0.16, a: 0.85 },
+        { div: 4, reach: 0.45, a: 0.92 },
+        { div: 8, reach: 0.85, a: 1.0 },
       ];
       for (var li = 0; li < levels.length; li++) {
         var L2 = levels[li];
@@ -443,13 +445,13 @@
         bc.drawImage(tiny, 0, 0, strip, tmp.height);
         bc.globalCompositeOperation = "destination-in";
         var gm = bc.createLinearGradient(0, 0, strip, 0);
-        if (dir < 0) { // 接缝在 temp 右缘：贴缝权重 0，向外增至满权重
+        if (dir < 0) { // 接缝在 temp 右缘：贴缝权重 0，距缝 (1-reach) 处起满权重
           gm.addColorStop(1, "rgba(0,0,0,0)");
-          gm.addColorStop(L2.to, "rgba(0,0,0," + L2.a + ")");
+          gm.addColorStop(1 - L2.reach, "rgba(0,0,0," + L2.a + ")");
           gm.addColorStop(0, "rgba(0,0,0," + L2.a + ")");
         } else {       // 接缝在 temp 左缘
           gm.addColorStop(0, "rgba(0,0,0,0)");
-          gm.addColorStop(1 - L2.to, "rgba(0,0,0," + L2.a + ")");
+          gm.addColorStop(L2.reach, "rgba(0,0,0," + L2.a + ")");
           gm.addColorStop(1, "rgba(0,0,0," + L2.a + ")");
         }
         bc.fillStyle = gm;
@@ -469,7 +471,7 @@
       }
       tc.fillStyle = fade;
       tc.fillRect(0, 0, strip, tmp.height);
-      wxCtx.drawImage(tmp, dir < 0 ? seamX - strip - 3 : seamX - 3, 0); // 3px 叠进图下，防取整缝隙
+      wxCtx.drawImage(tmp, dir < 0 ? seamX - strip + 3 : seamX - 3, 0); // 两侧都叠 3px 进图下：缺口会露出底色硬线
 
       // 极淡的雾气，暗示星河在画外还有余脉（巨屏三片，免得外侧太空）
       var hazeN = sideW > 700 ? 3 : 2;

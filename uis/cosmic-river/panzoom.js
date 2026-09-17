@@ -20,6 +20,7 @@
     var pinch = null;                      // { d0, s0, mid0, t0, c }
     var mouseDrag = false, lastM = [0, 0]; // 无 PointerEvent 环境的鼠标兜底
     var lastTap = 0, tapXY = [0, 0];
+    var zoomTapAt = 0; // pointerup 双击放大时刻——原生 dblclick 紧随其后，须挡掉防二次触发
 
     function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 
@@ -90,6 +91,7 @@
         var now = Date.now();
         var near = Math.hypot(e.clientX - tapXY[0], e.clientY - tapXY[1]) < 30;
         if (now - lastTap < 320 && near) {
+          zoomTapAt = now;
           if (s > 1.02) reset(); else zoomAt(e.clientX, e.clientY, 2.2);
           lastTap = 0;
         } else {
@@ -120,7 +122,15 @@
       });
     }
 
+    // 滚轮：以光标为锚缩放（capture 挡掉浏览器的页面缩放手势）
+    stage.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      var step = e.deltaMode === 1 ? 0.05 : 0.0016;
+      zoomAt(e.clientX, e.clientY, s * Math.exp(-e.deltaY * step));
+    }, { passive: false });
+
     stage.addEventListener("dblclick", function (e) {
+      if (Date.now() - zoomTapAt < 600) return; // 这次双击已由 pointerup 处理
       if (s > 1.02) reset();
       else zoomAt(e.clientX, e.clientY, 2.2);
     });
