@@ -74,19 +74,17 @@ function txOf(stage) {
   check("滚轮缩小钳制到 1×", t && t.s === 1 && t.tx === 0 && t.ty === 0, JSON.stringify(t));
 }
 
-/* 3) 拖动：1× 留 22% 余量，且不越界 */
+/* 3) 1× 拖动：内容与视口重合，无处可移——纹丝不动，绝不露底 */
 {
   const { win, stage } = boot();
   stage._fire("pointerdown", pev("pointerdown", 960, 540, 1));
   win._fire("pointermove", pev("pointermove", 1460, 840, 1)); // +500,+300
   win._fire("pointerup", pev("pointerup", 1460, 840, 1));
   const t = txOf(stage);
-  const cap = 0.22 * 1920;
-  check("1× 拖动生效", t && t.tx === 422.4 && t.ty === 237.6, JSON.stringify(t));
-  check("1× 拖动钳制在 22% 余量内", t && t.tx <= cap && t.ty <= 0.22 * 1080, JSON.stringify(t));
+  check("1× 拖动不动（画面盖满视口）", t && t.tx === 0 && t.ty === 0 && t.s === 1, JSON.stringify(t));
 }
 
-/* 4) 放大后拖动：可见范围钳制，内容不脱手 */
+/* 4) 放大后拖动：可见范围钳制，内容不脱手、边缘不内露 */
 {
   const { win, stage } = boot();
   stage._fire("wheel", { preventDefault() {}, deltaY: -880, deltaMode: 0, clientX: 960, clientY: 540 });
@@ -95,8 +93,10 @@ function txOf(stage) {
   win._fire("pointermove", pev("pointermove", 3000, 3000, 1)); // 拖很远
   win._fire("pointerup", pev("pointerup", 3000, 3000, 1));
   t = txOf(stage);
-  const rx = (t.s - 1) * 1920;
+  const rx = (t.s - 1) * 1920, ry = (t.s - 1) * 1080;
   check("放大后拖动钳制：-rx ≤ tx ≤ 0", t && t.tx >= -rx - 1e-6 && t.tx <= 0, JSON.stringify(t));
+  check("盖满视口：tx+s·W ≥ W 且 ty+s·H ≥ H",
+        t && t.tx + t.s * 1920 >= 1920 - 1e-6 && t.ty + t.s * 1080 >= 1080 - 1e-6, JSON.stringify(t));
 }
 
 /* 5) 双击放大：pointerup 双击检测放大后，原生 dblclick 不得复位（护栏） */

@@ -3,8 +3,8 @@
  * ------------------------------------------------------------
  * PanZoom.attach(stageEl, { max, onChange }) → { scale, reset }
  *   滚轮：以光标为锚缩放（1~max）
- *   拖动：任意倍率都能拖；放大后可整幅平移，
- *         1× 时留 22% 视口余量，随手摆正构图
+ *   拖动：放大后整幅平移（画面始终盖满视口，绝不露出底色；
+ *         1× 时内容与视口重合，无处可移即不动）
  *   双指：捏合缩放 + 双指拖移
  *   双击 / 双轻点：锚点放大 ↔ 复位归中
  * ============================================================ */
@@ -14,7 +14,6 @@
   function attach(stage, opts) {
     opts = opts || {};
     var min = 1, max = opts.max || 4;
-    var OVER = 0.22;                       // 1× 时的自由拖动余量（视口比例）
     var s = 1, tx = 0, ty = 0;
     var pts = new Map();
     var pinch = null;                      // { d0, s0, mid0, t0, c }
@@ -25,14 +24,13 @@
     function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 
     function apply() {
+      // 铁律：画面任何时刻都盖满视口——tx≤0 且 tx+s·W≥W（右侧同），
+      // 因此只有放大后才有可拖余量；1× 内容与视口重合，拖动自然不动
       var rx = (s - 1) * window.innerWidth;
       var ry = (s - 1) * window.innerHeight;
-      if (s <= 1.001) {
-        rx = Math.max(rx, OVER * window.innerWidth);   // 1× 也允许拖动余量
-        ry = Math.max(ry, OVER * window.innerHeight);
-      }
-      tx = clamp(tx, -rx, rx);
-      ty = clamp(ty, -ry, ry);
+      tx = clamp(tx, -rx, 0);
+      ty = clamp(ty, -ry, 0);
+      if (s <= 1.001) { tx = 0; ty = 0; s = 1; }
       stage.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + s + ")";
       stage.classList.toggle("dragging", pts.size > 0 || mouseDrag);
       if (opts.onChange) opts.onChange(s, tx, ty);

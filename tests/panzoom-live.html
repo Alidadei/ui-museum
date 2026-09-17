@@ -38,6 +38,12 @@
   stage.dispatchEvent(new MouseEvent("dblclick", { clientX: 902, clientY: 502, bubbles: true }));
   out.push("reset=" + t());
 
+  // 5) 1× 拖动：画面盖满视口，必须纹丝不动（不露底色）
+  stage.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, clientX: 600, clientY: 400, bubbles: true }));
+  window.dispatchEvent(new PointerEvent("pointermove", { pointerId: 1, clientX: 1100, clientY: 700, bubbles: true }));
+  window.dispatchEvent(new PointerEvent("pointerup", { pointerId: 1, clientX: 1100, clientY: 700, bubbles: true }));
+  out.push("drag1x=" + t());
+
   document.title = "DONE";
   var pre = document.createElement("pre");
   pre.id = "result";
