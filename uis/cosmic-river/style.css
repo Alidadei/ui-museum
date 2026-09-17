@@ -14,10 +14,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 图：等比 contain 居中，四周黑幕与图内夜空自然融为一体 */
-.scene { position: fixed; inset: 0; display: grid; place-items: center; }
+/* 图：等比 contain 居中，四周黑幕与图内夜空自然融为一体。
+ * 用绝对定位 inset:0 + margin:auto 居中——grid/flex 里 max-height:100%
+ * 会相对内容行高解析导致钳不住；绝对定位下百分比相对视口，稳。 */
+.scene { position: fixed; inset: 0; }
 .scene img {
-  display: block;
+  position: absolute;
+  inset: 0;
+  margin: auto;
   max-width: 100%;
   max-height: 100%;
   width: auto;
