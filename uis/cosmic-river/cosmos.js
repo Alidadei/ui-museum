@@ -206,8 +206,6 @@
    * 像素一一连续，再渐隐归黑），星点只收「亮核 + 暗边」的孤立星，
    * 底色取原图左右边缘的暗部均值。手机侧宽不够时整体退场。 */
   var WING_MIN_SIDE = 220;  // 侧宽小于此不开全景（手机竖屏）
-  var WING_STRIP = 140;     // 镜像延展条深度（显示像素）——要浅：太深会把
-                            // 可辨认的形体（人影、S 弯）镜像出去，穿帮
   var sprites = [], toneL = [1, 1, 3], toneR = [1, 1, 3];
   var wingStars = [], wingsOn = false;
 
@@ -295,9 +293,11 @@
       var seamX = dir < 0 ? rect.x : rect.x + rect.w;
       var tone = dir < 0 ? toneL : toneR;
       // 左缘离人影远（人影在图内 x≈0.6），延展条可以长些、渐隐慢些；
-      // 右缘必须短——深了会把人影镜像出去穿帮
-      var strip = dir < 0 ? Math.min(240, Math.floor(sideW * 0.55))
-                          : Math.min(WING_STRIP, Math.floor(sideW * 0.5));
+      // 右缘必须短——深了会把人影镜像出去穿帮。条深上限按源像素的
+      // 安全距离折算（右 408 / 左 700），随视口等比生长、巨屏不缩成窄领。
+      var strip = dir < 0 ? Math.min(700 * scale, sideW * 0.55)
+                          : Math.min(408 * scale, sideW * 0.5);
+      if (strip < 120) strip = Math.min(120, sideW * 0.5);
 
       // 底色：与原图边缘同调的暗
       wxCtx.fillStyle = "rgb(" + tone[0] + "," + tone[1] + "," + tone[2] + ")";
@@ -337,8 +337,9 @@
       tc.fillRect(0, 0, strip, tmp.height);
       wxCtx.drawImage(tmp, dir < 0 ? seamX - strip - 1 : seamX - 1, 0);
 
-      // 极淡的雾气，暗示星河在画外还有余脉
-      for (var h2 = 0; h2 < 2; h2++) {
+      // 极淡的雾气，暗示星河在画外还有余脉（巨屏三片，免得外侧太空）
+      var hazeN = sideW > 700 ? 3 : 2;
+      for (var h2 = 0; h2 < hazeN; h2++) {
         var hr = 160 + rng() * 260;
         var hx = seamX + dir * (strip * 0.7 + rng() * Math.max(0, sideW - strip * 0.7 - hr * 0.5));
         var hy = rng() * vh;

@@ -3,14 +3,15 @@
 不依赖浏览器，直接在真实像素上渲染桌面全景效果，供肉眼审核接缝质量。
 用法：python tests/wing-preview.py  →  输出 tests/preview-1280x800.png 及两张接缝特写
 """
-import math, random
+import math, random, sys
 import numpy as np
 from PIL import Image
 
 SRC = "uis/cosmic-river/cosmos.jpg"
-VW, VH = 1280, 800          # 模拟桌面视口
+VW = int(sys.argv[1]) if len(sys.argv) > 1 else 1280
+VH = int(sys.argv[2]) if len(sys.argv) > 2 else 800
+TAGOUT = f"-{VW}x{VH}" if len(sys.argv) > 1 else ""
 WING_MIN_SIDE = 220
-WING_STRIP = 140
 
 img = Image.open(SRC).convert("RGB")
 iw, ih = img.size            # 1206×2134
@@ -18,8 +19,6 @@ scale = VH / ih
 rect_w = iw * scale          # 452
 rect_x = (VW - rect_w) / 2   # 414
 sideW = rect_x
-strip = min(WING_STRIP, math.floor(sideW * 0.7))
-srcS = min(iw, strip / scale)
 
 disp = img.resize((round(rect_w), VH), Image.LANCZOS)
 disp_np = np.asarray(disp).astype(np.float64)  # (H,W,3)
@@ -67,7 +66,7 @@ while y < ih - R and found < 160:
                 y_local = True
         x += 7
     y += 7
-print("sprites:", len(sprites), "strip:", strip, "srcS:", round(srcS), "sideW:", round(sideW, 1))
+print("sprites:", len(sprites), "sideW:", round(sideW, 1), "scale:", round(scale, 4))
 
 # ---------- mulberry32（与 JS 逐位一致） ----------
 A = 20260917
@@ -99,7 +98,11 @@ def fade_alpha(t, gentle):  # t∈[0,1] 外缘→接缝
 for dir_ in (-1, 1):
     seamX = rect_x if dir_ < 0 else rect_x + rect_w
     gentle = dir_ < 0
-    strip = min(240, math.floor(sideW * 0.55)) if gentle else min(WING_STRIP, math.floor(sideW * 0.5))
+    # 条深上限按源像素安全距离折算（右 408 / 左 700，人影在图内 x≈0.6），
+    # 随视口等比生长、巨屏不缩成窄领
+    strip = min(700 * scale, sideW * 0.55) if gentle else min(408 * scale, sideW * 0.5)
+    strip = max(strip, min(120, sideW * 0.5))
+    strip = int(round(strip))
     # 底色
     tone = toneL if dir_ < 0 else toneR
     x0 = 0 if dir_ < 0 else int(seamX)
@@ -124,8 +127,9 @@ for dir_ in (-1, 1):
         region = canvas[:, int(seamX):int(seamX) + strip, :]
         canvas[:, int(seamX):int(seamX) + strip, :] = region * (1 - a) + cols * a
 
-    # 雾气 ×2
-    for _ in range(2):
+    # 雾气（巨屏三片，与 cosmos.js 同式）
+    haze_n = 3 if sideW > 700 else 2
+    for _ in range(haze_n):
         hr = 160 + rnd() * 260
         budget = max(0.0, sideW - strip * 0.7 - hr * 0.5)
         hx = seamX + dir_ * (strip * 0.7 + rnd() * budget)
@@ -167,13 +171,13 @@ for dir_ in (-1, 1):
 # 贴上本体
 canvas[:, wing_l:wing_r0, :] = disp_np
 out = np.clip(canvas, 0, 255).astype(np.uint8)
-Image.fromarray(out).save("tests/preview-1280x800.png")
-print("saved tests/preview-1280x800.png")
+Image.fromarray(out).save(f"tests/preview{TAGOUT}.png")
+print(f"saved tests/preview{TAGOUT}.png")
 
 # 接缝特写（左右各一张，2× 放大）
 for name, cx in (("left", int(rect_x)), ("right", int(rect_x + rect_w))):
     lo, hi = max(0, cx - 90), min(VW, cx + 90)
     crop = out[:, lo:hi, :]
     big = Image.fromarray(crop).resize((crop.shape[1] * 2, crop.shape[0] * 2), Image.NEAREST)
-    big.save(f"tests/preview-seam-{name}.png")
-    print(f"saved tests/preview-seam-{name}.png (x{cx})")
+    big.save(f"tests/preview-seam-{name}{TAGOUT}.png")
+    print(f"saved tests/preview-seam-{name}{TAGOUT}.png (x{cx})")
