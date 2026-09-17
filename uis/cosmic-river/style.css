@@ -1,6 +1,7 @@
 /* 宇宙玄学 · 仰观星河
- * 原则：原图一分不改——<img> 只做等比缩放（contain），永不裁切、
- * 永不形变、不加滤镜；两块画布叠在其上，只做加法光。 */
+ * 图与画层各自独立：图像本体不做任何滤镜/形变，WebGL 层只做
+ * 沿流场的小幅平流（用户要的"流动"）；两块 2D 画布做加法光。
+ * 整页支持拖动与缩放（#stage 统一变换）。 */
 
 :root { color-scheme: dark; }
 
@@ -12,6 +13,16 @@ body {
   background: #020205;
   font-family: "STXingkai", "Xingkai SC", "KaiTi", "STKaiti", "Kaiti SC", "楷体", serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* 舞台：所有画层收进一个可拖动/缩放的容器。transform 会成为
+ * fixed 子层的包含块，几何不变、整体联动；1× 时与视口重合。 */
+#stage {
+  position: fixed;
+  inset: 0;
+  transform-origin: 0 0;
+  touch-action: none;
+  will-change: transform;
 }
 
 /* 图：等比 contain 居中，四周黑幕与图内夜空自然融为一体。
@@ -74,6 +85,7 @@ body {
   padding: 4px 8px;
   border-radius: 4px;
   white-space: nowrap;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -36,6 +36,7 @@
   var wxCv = document.getElementById("wx");   // 两翼星域（桌面全景，垫在图后）
   var wxCtx = wxCv.getContext("2d");
   var glCv = document.getElementById("gl");   // WebGL 平流层（整幅图沿河道流动）
+  var stage = document.getElementById("stage"); // 可拖动/缩放的舞台容器
   var quoteEl = document.getElementById("quote");
   var testEl = document.getElementById("selftest");
 
@@ -200,11 +201,73 @@
     }
     flowTex = { data: d, w: fw, h: fh };
   }
+
+  /* ---------------- 衣袂 & 影子 局部动画纹理 ----------------
+   * 箱体罩住人影与投影。RG = 衣袂摆动矢量（肩→摆缘渐强，只染剪影
+   * 暗像素，头肩几乎不动）；BA = 影子摇曳矢量（脚跟→梢沿主轴渐强，
+   * 远端摆幅大＝影子在伸长收缩）。有符号分量按 0.5 基线编码，
+   * 箱缘渐隐防边缘渗色。 */
+  var LOC_BOX = { x: 0.505, y: 0.455, w: 0.16, h: 0.13 };
+  var LOC_TW = 160, LOC_TH = 208;
+  var locTex = null;
+  function buildLocalTexture() {
+    var iw = img.naturalWidth, ih = img.naturalHeight;
+    var off = document.createElement("canvas");
+    off.width = LOC_TW; off.height = LOC_TH;
+    var c = off.getContext("2d", { willReadFrequently: true });
+    c.drawImage(img, LOC_BOX.x * iw, LOC_BOX.y * ih, LOC_BOX.w * iw, LOC_BOX.h * ih,
+                0, 0, LOC_TW, LOC_TH);
+    var d = null;
+    try { d = c.getImageData(0, 0, LOC_TW, LOC_TH).data; } catch (e) { d = null; }
+    locTex = null;
+    if (!d) return;
+    var data = new Uint8Array(LOC_TW * LOC_TH * 4);
+    var dirR = { x: 0.94, y: 0.34 }, rl = Math.sqrt(dirR.x * dirR.x + dirR.y * dirR.y);
+    dirR.x /= rl; dirR.y /= rl;
+    var dirS = { x: -0.84, y: 0.55 }, sl2 = Math.sqrt(dirS.x * dirS.x + dirS.y * dirS.y);
+    dirS.x /= sl2; dirS.y /= sl2;
+    var feet = { x: 0.587, y: 0.500 };
+    for (var ty = 0; ty < LOC_TH; ty++) {
+      for (var tx = 0; tx < LOC_TW; tx++) {
+        var u = LOC_BOX.x + (tx + 0.5) / LOC_TW * LOC_BOX.w;
+        var v = LOC_BOX.y + (ty + 0.5) / LOC_TH * LOC_BOX.h;
+        var i4 = (ty * LOC_TW + tx) * 4;
+        var lum = (0.2126 * d[i4] + 0.7152 * d[i4 + 1] + 0.0722 * d[i4 + 2]) / 255;
+        var dark = Math.max(0, Math.min(1, (0.45 - lum) / 0.15));
+        var darkS = Math.max(0, Math.min(1, (0.5 - lum) / 0.2));
+        // 衣袂：肩线 0.4885 → 摆缘 0.5010 渐强，人形窄带以内
+        var rf = 0;
+        if (u > 0.565 && u < 0.612 && v > 0.482 && v < 0.506) {
+          rf = Math.max(0, Math.min(1, (v - 0.4885) / 0.0125)) * dark;
+        }
+        // 影子：脚跟→梢 沿主轴渐强，横向收窄
+        var du = u - feet.x, dv = v - feet.y;
+        var along = du * dirS.x + dv * dirS.y;
+        var lat = Math.abs(du * dirS.y - dv * dirS.x);
+        var rs = 0;
+        if (along > -0.004 && along < 0.03 && lat < 0.016) {
+          rs = Math.max(0, Math.min(1, along / 0.022)) * darkS * (1 - lat / 0.016);
+        }
+        var ex = Math.min((tx + 1) / 8, (LOC_TW - tx) / 8, 1);
+        var ey = Math.min((ty + 1) / 8, (LOC_TH - ty) / 8, 1);
+        var fade = Math.min(ex, ey);
+        var j = i4;
+        data[j] = Math.round((dirR.x * rf * fade * 0.5 + 0.5) * 255);
+        data[j + 1] = Math.round((dirR.y * rf * fade * 0.5 + 0.5) * 255);
+        data[j + 2] = Math.round((dirS.x * rs * fade * 0.5 + 0.5) * 255);
+        data[j + 3] = Math.round((dirS.y * rs * fade * 0.5 + 0.5) * 255);
+      }
+    }
+    locTex = { data: data, w: LOC_TW, h: LOC_TH };
+  }
   function startFlow() {
     if (quiet || !window.FlowGL || !flowTex) return;
     flowCtl = FlowGL.create(glCv, img, flowTex, {
       ampPx: FLOW_AMP,
       cycle: FLOW_CYCLE,
+      locTex: locTex,
+      flAmpPx: 2.3,
+      swAmpPx: 3.4,
       onLost: function () {
         flowCtl = null;
         state.flow = "lost";
@@ -614,7 +677,7 @@
     imgOK: false, iw: 0, ih: 0, field: [0, 0],
     drops: 0, twinkles: 0, ambient: 0, sprites: 0,
     wings: { on: false, side: 0, stars: 0 },
-    flow: "2d",
+    flow: "2d", zoom: 1,
     line: null, lineTotal: lines.length, mode: mode, fps: 60,
   };
   window.__cosmos = state; // 自动化/测试随时可读（面板只在 ?t=1 显示）
@@ -647,10 +710,14 @@
     fitRect();
     computeField();
     buildFlowTexture();
+    buildLocalTexture();
     startFlow();
     extractSprites();
     resize();
     buildPopulations();
+    if (window.PanZoom && stage) {
+      PanZoom.attach(stage, { max: 4, onChange: function (sv) { state.zoom = sv; } });
+    }
     if (quiet) { stillFrame(); } else { start(); }
     window.addEventListener("resize", function () {
       resize();

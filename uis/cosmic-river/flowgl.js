@@ -29,9 +29,13 @@
     "varying vec2 v_uv;" +
     "uniform sampler2D u_img;" +
     "uniform sampler2D u_flow;" +
+    "uniform sampler2D u_loc;" +
     "uniform float u_t;" +
     "uniform float u_cycle;" +
     "uniform vec2 u_amp;" +
+    "uniform vec4 u_box;" +
+    "uniform vec2 u_flAmp;" +
+    "uniform vec2 u_swAmp;" +
     "void main(){" +
     "  vec4 f = texture2D(u_flow, v_uv);" +
     "  vec2 dir = (f.rg - 0.5) * 2.0;" +
@@ -41,6 +45,15 @@
     "  float f1 = fract(tt + 0.5);" +
     "  vec2 oA = dir * (f0 - 0.5) * 2.0 * u_amp * m;" +
     "  vec2 oB = dir * (f1 - 0.5) * 2.0 * u_amp * m;" +
+    "  vec2 uvL = clamp((v_uv - u_box.xy) / u_box.zw, 0.0, 1.0);" +
+    "  vec4 L = texture2D(u_loc, uvL);" +
+    "  vec2 robe = (L.rg - 0.5) * 2.0;" +
+    "  vec2 shad = (L.ba - 0.5) * 2.0;" +
+    "  float fl = sin(u_t * 2.6 + 0.8) + 0.5 * sin(u_t * 4.3 + 2.1);" +
+    "  float sw = sin(u_t * 1.15 + 0.5) + 0.35 * sin(u_t * 2.9 + 1.2);" +
+    "  vec2 loc = robe * fl * u_flAmp + shad * sw * u_swAmp;" +
+    "  oA += loc;" +
+    "  oB += loc;" +
     "  vec3 cA = texture2D(u_img, v_uv + oA).rgb;" +
     "  vec3 cB = texture2D(u_img, v_uv + oB).rgb;" +
     "  float wA = abs(f0 * 2.0 - 1.0);" +
@@ -101,15 +114,29 @@
     var uFlow = makeTex(gl, 1);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, flow.w, flow.h, 0,
                   gl.RGBA, gl.UNSIGNED_BYTE, flow.data);
+    // 局部动画纹理（衣袂/影子矢量；缺省给 1×1 零纹理兜底）
+    var uLoc = makeTex(gl, 2);
+    if (opts.locTex) {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, opts.locTex.w, opts.locTex.h, 0,
+                    gl.RGBA, gl.UNSIGNED_BYTE, opts.locTex.data);
+    } else {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                    new Uint8Array([128, 128, 128, 128]));
+    }
 
     var U = {};
-    ["u_img", "u_flow", "u_t", "u_cycle", "u_amp"].forEach(function (n) {
+    ["u_img", "u_flow", "u_loc", "u_t", "u_cycle", "u_amp", "u_box", "u_flAmp", "u_swAmp"].forEach(function (n) {
       U[n] = gl.getUniformLocation(prog, n);
     });
     gl.uniform1i(U.u_img, 0);
     gl.uniform1i(U.u_flow, 1);
+    gl.uniform1i(U.u_loc, 2);
     gl.uniform1f(U.u_cycle, opts.cycle || 9);
     gl.uniform2f(U.u_amp, (opts.ampPx || 6) / 100, (opts.ampPx || 6) / 100);
+    var b = opts.box || { x: 0, y: 0, w: 1, h: 1 };
+    gl.uniform4f(U.u_box, b.x, b.y, b.w, b.h);
+    gl.uniform2f(U.u_flAmp, (opts.flAmpPx || 0) / 100, (opts.flAmpPx || 0) / 100);
+    gl.uniform2f(U.u_swAmp, (opts.swAmpPx || 0) / 100, (opts.swAmpPx || 0) / 100);
 
     var dead = false;
     canvas.addEventListener("webglcontextlost", function (e) {
@@ -132,6 +159,8 @@
         canvas.style.height = h + "px";
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.uniform2f(U.u_amp, (opts.ampPx || 6) / w, (opts.ampPx || 6) / h);
+        gl.uniform2f(U.u_flAmp, (opts.flAmpPx || 0) / w, (opts.flAmpPx || 0) / h);
+        gl.uniform2f(U.u_swAmp, (opts.swAmpPx || 0) / w, (opts.swAmpPx || 0) / h);
       },
       render: function (tSec) {
         if (dead) return;

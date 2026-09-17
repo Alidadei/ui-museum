@@ -8,12 +8,15 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <canvas id="wx" aria-hidden="true"></canvas>
-  <figure class="scene"><canvas id="gl" aria-hidden="true"></canvas><img id="cosmos" src="cosmos.jpg" alt="深黑宇宙中一条星河蜿蜒而过，河心有个小小行人"></figure>
-  <canvas id="fx" aria-hidden="true"></canvas>
-  <canvas id="gx" aria-hidden="true"></canvas>
+  <div id="stage">
+    <canvas id="wx" aria-hidden="true"></canvas>
+    <figure class="scene"><canvas id="gl" aria-hidden="true"></canvas><img id="cosmos" src="cosmos.jpg" alt="深黑宇宙中一条星河蜿蜒而过，河心有个小小行人"></figure>
+    <canvas id="fx" aria-hidden="true"></canvas>
+    <canvas id="gx" aria-hidden="true"></canvas>
+  </div>
   <aside id="quote" lang="zh"></aside>
   <pre id="selftest" hidden></pre>
+  <script src="panzoom.js"></script>
   <script src="flowgl.js"></script>
   <script src="cosmos.js"></script>
 </body>
