@@ -111,21 +111,28 @@ for dir_ in (-1, 1):
     # 镜像延展条（display 域：直接镜像显示图的外缘 strip 列）
     # alpha 数组 t=0 是外缘(fade=0)、t=strip-1 是接缝(fade=1)；
     # 左翼区域 col0=外缘 → 直接用；右翼区域 col0=接缝 → 反转
-    strip_img = disp_np[:, :strip, :] if dir_ < 0 else disp_np[:, -strip:, :]
+    strip_img = disp_np[:, 2:strip + 2, :] if dir_ < 0 else disp_np[:, -(strip + 2):-2, :]
     cols = strip_img[:, ::-1, :]
-    # 横向涂抹（缩 1/8 再拉回）：抹掉可辨认结构，只留亮度余晖
+    # 渐进离焦：贴缝清晰，向外三级化开（2x/4x/8x，与 cosmos.js 同式）
     hh, ww = cols.shape[:2]
-    small = Image.fromarray(np.clip(cols, 0, 255).astype(np.uint8)).resize((max(2, strip // 8), max(2, hh // 8)), Image.LANCZOS)
-    cols = np.asarray(small.resize((strip, hh), Image.BILINEAR)).astype(np.float64)
+    base = cols.astype(np.float64)
+    tcol = np.arange(strip) / max(1, strip - 1)
+    dist = (1 - tcol) if dir_ < 0 else tcol   # 离缝距离 0→1
+    for div, to, amp in ((2, 0.5, 0.8), (4, 0.75, 0.9), (8, 0.95, 1.0)):
+        small = Image.fromarray(np.clip(cols, 0, 255).astype(np.uint8)).resize((max(2, strip // div), max(2, hh // div)), Image.LANCZOS)
+        blur = np.asarray(small.resize((strip, hh), Image.BILINEAR)).astype(np.float64)
+        wgt = (np.clip(dist / to, 0, 1) * amp)[None, :, None]
+        base = base * (1 - wgt) + blur * wgt
+    cols = base
     alphas = np.array([fade_alpha(t / (strip - 1), gentle) for t in range(strip)])
     if dir_ < 0:
         a = alphas[None, :, None]
-        region = canvas[:, int(seamX - strip):int(seamX), :]
-        canvas[:, int(seamX - strip):int(seamX), :] = region * (1 - a) + cols * a
+        region = canvas[:, round(seamX) - strip:round(seamX), :]
+        canvas[:, round(seamX) - strip:round(seamX), :] = region * (1 - a) + cols * a
     else:
         a = alphas[None, ::-1, None]              # col0=接缝侧=1
-        region = canvas[:, int(seamX):int(seamX) + strip, :]
-        canvas[:, int(seamX):int(seamX) + strip, :] = region * (1 - a) + cols * a
+        region = canvas[:, round(seamX):round(seamX) + strip, :]
+        canvas[:, round(seamX):round(seamX) + strip, :] = region * (1 - a) + cols * a
 
     # 雾气（巨屏三片，与 cosmos.js 同式）
     haze_n = 3 if sideW > 700 else 2

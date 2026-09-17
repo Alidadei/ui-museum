@@ -404,34 +404,58 @@
       var tone = dir < 0 ? toneL : toneR;
       // 左缘离人影远（人影在图内 x≈0.6），延展条可以长些、渐隐慢些；
       // 右缘必须短——深了会把人影镜像出去穿帮。条深上限按源像素的
-      // 安全距离折算（右 408 / 左 700），随视口等比生长、巨屏不缩成窄领。
-      var strip = dir < 0 ? Math.min(700 * scale, sideW * 0.55)
-                          : Math.min(408 * scale, sideW * 0.5);
+      // 安全距离折算（右 408 / 左 680），随视口等比生长、巨屏不缩成窄领。
+      var strip = dir < 0 ? Math.min(260, 680 * scale, sideW * 0.55)
+                          : Math.min(160, 408 * scale, sideW * 0.5);
       if (strip < 120) strip = Math.min(120, sideW * 0.5);
 
       // 底色：与原图边缘同调的暗
       wxCtx.fillStyle = "rgb(" + tone[0] + "," + tone[1] + "," + tone[2] + ")";
       wxCtx.fillRect(dir < 0 ? 0 : seamX, 0, sideW, vh);
 
-      // 镜像延展条：反射对接缝，渐隐进黑（在临时画布上做完淡出再贴）
+      // 镜像延展条：反射对接缝，向外渐进离焦、渐隐入夜（杜绝纹理断崖）
       var tmp = document.createElement("canvas");
       tmp.width = strip; tmp.height = Math.ceil(vh);
       var tc = tmp.getContext("2d");
-      var srcS = Math.min(iw, strip / scale);
+      var srcS = Math.min(iw - 4, strip / scale);
       tc.translate(strip, 0);
       tc.scale(-1, 1);
-      tc.drawImage(img, dir < 0 ? 0 : iw - srcS, 0, srcS, ih, 0, 0, strip, vh);
+      // 从图像内 2px 处起采：最外沿列常有压缩暗边，镜像会把暗边复制成一条线
+      tc.drawImage(img, dir < 0 ? 2 : iw - srcS - 2, 0, srcS, ih, 0, 0, strip, vh);
       tc.setTransform(1, 0, 0, 1, 0, 0);
-      // 横向涂抹：缩到 1/8 再拉回。镜像条若保留原结构，「黑洞」这类
-      // 可辨认的形状会沿接缝对称出去一眼穿帮；抹成光痕就只是余晖。
-      var bw = Math.max(2, Math.round(strip / 8));
-      var bh = Math.max(2, Math.round(tmp.height / 8));
-      var tiny = document.createElement("canvas");
-      tiny.width = bw; tiny.height = bh;
-      tiny.getContext("2d").drawImage(tmp, 0, 0, bw, bh);
-      tc.clearRect(0, 0, strip, tmp.height);
-      tc.imageSmoothingEnabled = true;
-      tc.drawImage(tiny, 0, 0, strip, tmp.height);
+      // 三级离焦逐层向外加权：贴缝清晰、越远越化——焦点像烟雾一样散掉
+      var levels = [
+        { div: 2, to: 0.5, a: 0.8 },
+        { div: 4, to: 0.75, a: 0.9 },
+        { div: 8, to: 0.95, a: 1.0 },
+      ];
+      for (var li = 0; li < levels.length; li++) {
+        var L2 = levels[li];
+        var bCv = document.createElement("canvas");
+        bCv.width = strip; bCv.height = tmp.height;
+        var bc = bCv.getContext("2d");
+        var bw = Math.max(2, Math.round(strip / L2.div));
+        var bh = Math.max(2, Math.round(tmp.height / L2.div));
+        var tiny = document.createElement("canvas");
+        tiny.width = bw; tiny.height = bh;
+        tiny.getContext("2d").drawImage(tmp, 0, 0, bw, bh);
+        bc.imageSmoothingEnabled = true;
+        bc.drawImage(tiny, 0, 0, strip, tmp.height);
+        bc.globalCompositeOperation = "destination-in";
+        var gm = bc.createLinearGradient(0, 0, strip, 0);
+        if (dir < 0) { // 接缝在 temp 右缘：贴缝权重 0，向外增至满权重
+          gm.addColorStop(1, "rgba(0,0,0,0)");
+          gm.addColorStop(L2.to, "rgba(0,0,0," + L2.a + ")");
+          gm.addColorStop(0, "rgba(0,0,0," + L2.a + ")");
+        } else {       // 接缝在 temp 左缘
+          gm.addColorStop(0, "rgba(0,0,0,0)");
+          gm.addColorStop(1 - L2.to, "rgba(0,0,0," + L2.a + ")");
+          gm.addColorStop(1, "rgba(0,0,0," + L2.a + ")");
+        }
+        bc.fillStyle = gm;
+        bc.fillRect(0, 0, strip, tmp.height);
+        tc.drawImage(bCv, 0, 0);
+      }
       tc.globalCompositeOperation = "destination-in";
       var fade = tc.createLinearGradient(0, 0, strip, 0);
       if (dir < 0) { // 接缝在 temp 右缘（左侧条长，渐隐更缓）
@@ -445,7 +469,7 @@
       }
       tc.fillStyle = fade;
       tc.fillRect(0, 0, strip, tmp.height);
-      wxCtx.drawImage(tmp, dir < 0 ? seamX - strip - 1 : seamX - 1, 0);
+      wxCtx.drawImage(tmp, dir < 0 ? seamX - strip - 3 : seamX - 3, 0); // 3px 叠进图下，防取整缝隙
 
       // 极淡的雾气，暗示星河在画外还有余脉（巨屏三片，免得外侧太空）
       var hazeN = sideW > 700 ? 3 : 2;
